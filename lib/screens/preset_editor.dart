@@ -30,19 +30,23 @@ class _HeaderRow extends _Row {
 }
 
 class _ItemRow extends _Row {
-  _ItemRow(this.cat, this.item) : super('i-${item.id}');
-  final PackCategory cat;
+  _ItemRow(this.cat, this.item, {this.firstInCard = false})
+      : super('i-${item.id}');
+  final PackCategory? cat; // null = loose
   final Item item;
+  final bool firstInCard;
 }
 
 class _AddRow extends _Row {
-  _AddRow(this.cat) : super('a-${cat.id}');
-  final PackCategory cat;
+  _AddRow(this.cat, {this.roundTop = false}) : super('a-${cat?.id ?? 'loose'}');
+  final PackCategory? cat; // null = loose
+  final bool roundTop;
 }
 
 class _PresetEditorScreenState extends State<PresetEditorScreen> {
   final Set<String> _collapsed = {};
-  String? _addingCatId;
+  bool _adding = false;
+  String? _addCatId; // null = loose section
   final TextEditingController _addCtrl = TextEditingController();
   final FocusNode _addFocus = FocusNode();
 
@@ -56,22 +60,31 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
   }
 
   void _commitAdd({required bool keepOpen}) {
-    final catId = _addingCatId;
-    if (catId == null) return;
+    if (!_adding) return;
     final text = _addCtrl.text.trim();
     if (text.isNotEmpty) {
-      _store.presetAddItem(widget.presetId, catId, text);
+      _store.presetAddItem(widget.presetId, _addCatId, text);
       Haptics.tap();
     }
     _addCtrl.clear();
     if (keepOpen && text.isNotEmpty) {
       _addFocus.requestFocus();
     } else {
-      setState(() => _addingCatId = null);
+      setState(() => _adding = false);
     }
   }
 
-  Future<void> _renameItem(PackCategory cat, Item item) async {
+  /// Opens the inline add row for [cat] (null = loose section).
+  void _openAdd(PackCategory? cat) {
+    _commitAdd(keepOpen: false);
+    setState(() {
+      _adding = true;
+      _addCatId = cat?.id;
+    });
+    _addCtrl.clear();
+  }
+
+  Future<void> _renameItem(PackCategory? cat, Item item) async {
     final h = context.harbor;
     final ctrl = TextEditingController(text: item.name);
     final name = await showDialog<String>(
@@ -96,13 +109,15 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
       ),
     );
     if (name != null && name.isNotEmpty && name != item.name) {
-      _store.presetRenameItem(widget.presetId, cat.id, item.id, name);
+      _store.presetRenameItem(widget.presetId, cat?.id, item.id, name);
     }
   }
 
-  void _deleteItem(PackCategory cat, Item item) {
-    final idx = cat.items.indexWhere((i) => i.id == item.id);
-    _store.presetDeleteItem(widget.presetId, cat.id, item.id);
+  void _deleteItem(PackCategory? cat, Item item) {
+    final bucket =
+        cat?.items ?? _store.presetById(widget.presetId)?.items ?? const [];
+    final idx = bucket.indexWhere((i) => i.id == item.id);
+    _store.presetDeleteItem(widget.presetId, cat?.id, item.id);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
@@ -111,7 +126,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () =>
-              _store.presetInsertItem(widget.presetId, cat.id, idx, item),
+              _store.presetInsertItem(widget.presetId, cat?.id, idx, item),
         ),
       ));
   }
@@ -189,6 +204,13 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
 
   List<_Row> _buildRows(Preset preset) {
     final rows = <_Row>[];
+    // Loose section at top: shown when there are loose items or no categories.
+    if (preset.items.isNotEmpty || preset.categories.isEmpty) {
+      for (var k = 0; k < preset.items.length; k++) {
+        rows.add(_ItemRow(null, preset.items[k], firstInCard: k == 0));
+      }
+      rows.add(_AddRow(null, roundTop: preset.items.isEmpty));
+    }
     for (final cat in preset.categories) {
       rows.add(_HeaderRow(cat));
       if (!_collapsed.contains(cat.id)) {
@@ -205,24 +227,24 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     final dragged = rows[oldIndex];
     if (dragged is! _ItemRow) return;
     final remaining = [...rows]..removeAt(oldIndex);
-    PackCategory? target;
+    PackCategory? target; // null = loose
     var pos = 0;
     for (var k = 0; k < newIndex && k < remaining.length; k++) {
       final row = remaining[k];
       if (row is _HeaderRow) {
         target = row.cat;
         pos = 0;
-      } else if (row is _ItemRow && row.cat.id == target?.id) {
+      } else if (row is _ItemRow && row.cat?.id == target?.id) {
         pos++;
       }
     }
-    target ??= dragged.cat;
-    final items = target.items.where((i) => i.id != dragged.item.id).toList();
+    final preset = _store.presetById(widget.presetId);
+    final bucket = target?.items ?? preset?.items ?? const [];
+    final items = bucket.where((i) => i.id != dragged.item.id).toList();
     final insertAt = pos.clamp(0, items.length);
-    // Translate to a model index in the target category.
-    _store.presetDeleteItem(widget.presetId, dragged.cat.id, dragged.item.id);
+    _store.presetDeleteItem(widget.presetId, dragged.cat?.id, dragged.item.id);
     _store.presetInsertItem(
-        widget.presetId, target.id, insertAt, dragged.item.copy());
+        widget.presetId, target?.id, insertAt, dragged.item.copy());
   }
 
   @override
@@ -278,7 +300,9 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
             ),
             Container(height: 1, color: h.line),
             Expanded(
-              child: preset.categories.isEmpty
+              child: (preset.items.isEmpty &&
+                      preset.categories.isEmpty &&
+                      !_adding)
                   ? _empty(h)
                   : ReorderableListView.builder(
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
@@ -364,11 +388,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
           ),
         );
 
-      case _ItemRow(:final cat, :final item):
+      case _ItemRow(:final cat, :final item, :final firstInCard):
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: h.card,
+          clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
+          decoration: BoxDecoration(
+            color: h.card,
+            borderRadius: firstInCard
+                ? const BorderRadius.vertical(top: Radius.circular(12))
+                : null,
+          ),
           child: ReorderableDelayedDragStartListener(
             index: index,
             child: Dismissible(
@@ -402,8 +432,10 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               },
               onDismissed: (_) => _deleteItem(cat, item),
               child: Container(
-                decoration:
-                    BoxDecoration(border: Border(top: BorderSide(color: h.line))),
+                decoration: firstInCard
+                    ? null
+                    : BoxDecoration(
+                        border: Border(top: BorderSide(color: h.line))),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
                 child: Row(
@@ -428,29 +460,26 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
           ),
         );
 
-      case _AddRow(:final cat):
-        final active = _addingCatId == cat.id;
+      case _AddRow(:final cat, :final roundTop):
+        final active = _adding && _addCatId == cat?.id;
+        final radius = roundTop
+            ? BorderRadius.circular(12)
+            : const BorderRadius.vertical(bottom: Radius.circular(12));
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: active ? h.accentSoft : h.card,
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(12)),
+            borderRadius: radius,
           ),
           child: InkWell(
-            onTap: active
-                ? null
-                : () {
-                    _commitAdd(keepOpen: false);
-                    setState(() => _addingCatId = cat.id);
-                    _addCtrl.clear();
-                  },
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(12)),
+            onTap: active ? null : () => _openAdd(cat),
+            borderRadius: radius,
             child: Container(
-              decoration:
-                  BoxDecoration(border: Border(top: BorderSide(color: h.line))),
+              decoration: roundTop
+                  ? null
+                  : BoxDecoration(
+                      border: Border(top: BorderSide(color: h.line))),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(
@@ -495,19 +524,33 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
   Widget _empty(Harbor h) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 44),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('📋', style: TextStyle(fontSize: 44)),
+            const Text('📋', style: TextStyle(fontSize: 42)),
             const SizedBox(height: 14),
             Text('Empty preset',
                 style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w700, color: h.ink)),
+                    fontSize: 15.5, fontWeight: FontWeight.w700, color: h.ink)),
             const SizedBox(height: 6),
-            Text('Tap + to add a category, then fill it with items.',
+            Text('Add items directly, or use + to add a category.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: h.mut, height: 1.5)),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => _openAdd(null),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add item'),
+              style: FilledButton.styleFrom(
+                backgroundColor: h.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(11)),
+                textStyle:
+                    const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+              ),
+            ),
           ],
         ),
       ),
