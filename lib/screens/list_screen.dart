@@ -963,26 +963,62 @@ class _Header extends StatelessWidget {
             },
             itemBuilder: (context) => [
               PopupMenuItem(
-                  value: 'uncheck',
-                  enabled: list.packedItems > 0,
-                  child: Text('Uncheck All', style: menuStyle)),
+                value: 'uncheck',
+                enabled: list.packedItems > 0,
+                child: _MenuRow(
+                    Icons.remove_done_rounded, 'Uncheck All', menuStyle),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem(
-                  value: 'collapse',
-                  child: Text('Collapse All', style: menuStyle)),
+                value: 'collapse',
+                child: _MenuRow(
+                    Icons.unfold_less_rounded, 'Collapse All', menuStyle),
+              ),
               PopupMenuItem(
-                  value: 'expand',
-                  child: Text('Expand All', style: menuStyle)),
+                value: 'expand',
+                child: _MenuRow(
+                    Icons.unfold_more_rounded, 'Expand All', menuStyle),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem(
-                  value: 'preset',
-                  child: Text('Save as Preset', style: menuStyle)),
+                value: 'preset',
+                child: _MenuRow(
+                    Icons.bookmark_add_outlined, 'Save as Preset', menuStyle),
+              ),
+              const PopupMenuDivider(),
               PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete List',
-                      style: TextStyle(fontSize: 14, color: harbor.danger))),
+                value: 'delete',
+                child: _MenuRow(Icons.delete_outline_rounded, 'Delete List',
+                    TextStyle(fontSize: 14, color: harbor.danger),
+                    danger: true),
+              ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A menu row: leading icon (muted, or danger-red) + label. Used to give the
+/// list ··· menu clearer visual separation.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow(this.icon, this.label, this.style, {this.danger = false});
+
+  final IconData icon;
+  final String label;
+  final TextStyle style;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final harbor = context.harbor;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: danger ? harbor.danger : harbor.mut),
+        const SizedBox(width: 12),
+        Text(label, style: style),
+      ],
     );
   }
 }
