@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/semantics.dart';
@@ -12,7 +13,11 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SemanticsBinding.instance.ensureSemantics();
+  // Web preview only: force the semantics tree on so browser inspection tools
+  // can see the widgets. Never do this in the shipped app — forcing semantics
+  // on changes accessibility-driven behavior (e.g. SnackBars stop
+  // auto-dismissing, matching how Flutter treats an active screen reader).
+  if (kIsWeb) SemanticsBinding.instance.ensureSemantics();
   final store = AppStore();
   await store.load();
   SoundEffects.init();
