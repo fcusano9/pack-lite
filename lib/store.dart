@@ -208,52 +208,65 @@ class AppStore extends ChangeNotifier {
   }
 
   // ---- items ----
+  //
+  // Category is optional: a null [catId] targets the list's loose items,
+  // a non-null [catId] targets that named category.
 
-  Item addItem(String listId, String catId, String name) {
+  /// Resolves the item bucket for a list: the loose list when [catId] is null,
+  /// otherwise the named category's items (or null if not found).
+  List<Item>? _itemsIn(String listId, String? catId) {
+    final list = byId(listId);
+    if (list == null) return null;
+    if (catId == null) return list.items;
+    return _cat(listId, catId)?.items;
+  }
+
+  Item addItem(String listId, String? catId, String name) {
     final item = Item(id: newId(), name: name);
-    _mutate(() => _cat(listId, catId)?.items.add(item));
+    _mutate(() => _itemsIn(listId, catId)?.add(item));
     return item;
   }
 
-  void insertItem(String listId, String catId, int index, Item item) {
+  void insertItem(String listId, String? catId, int index, Item item) {
     _mutate(() {
-      final cat = _cat(listId, catId);
-      if (cat == null) return;
-      cat.items.insert(index.clamp(0, cat.items.length), item);
+      final items = _itemsIn(listId, catId);
+      if (items == null) return;
+      items.insert(index.clamp(0, items.length), item);
     });
   }
 
-  void renameItem(String listId, String catId, String itemId, String name) {
+  void renameItem(String listId, String? catId, String itemId, String name) {
     _mutate(() {
-      final cat = _cat(listId, catId);
-      final item = cat?.items.where((i) => i.id == itemId).firstOrNull;
+      final item =
+          _itemsIn(listId, catId)?.where((i) => i.id == itemId).firstOrNull;
       if (item != null) item.name = name;
     });
   }
 
-  void deleteItem(String listId, String catId, String itemId) {
-    _mutate(() => _cat(listId, catId)?.items.removeWhere((i) => i.id == itemId));
+  void deleteItem(String listId, String? catId, String itemId) {
+    _mutate(() => _itemsIn(listId, catId)?.removeWhere((i) => i.id == itemId));
   }
 
-  void setItemChecked(String listId, String catId, String itemId, bool checked) {
+  void setItemChecked(
+      String listId, String? catId, String itemId, bool checked) {
     _mutate(() {
-      final cat = _cat(listId, catId);
-      final item = cat?.items.where((i) => i.id == itemId).firstOrNull;
+      final item =
+          _itemsIn(listId, catId)?.where((i) => i.id == itemId).firstOrNull;
       if (item != null) item.checked = checked;
     });
   }
 
-  /// Moves an item into [toCatId] at [toIndex] among that category's items.
-  void moveItem(String listId, String fromCatId, String itemId, String toCatId,
-      int toIndex) {
+  /// Moves an item into [toCatId] (null = loose) at [toIndex] within that bucket.
+  void moveItem(String listId, String? fromCatId, String itemId,
+      String? toCatId, int toIndex) {
     _mutate(() {
-      final from = _cat(listId, fromCatId);
-      final to = _cat(listId, toCatId);
+      final from = _itemsIn(listId, fromCatId);
+      final to = _itemsIn(listId, toCatId);
       if (from == null || to == null) return;
-      final index = from.items.indexWhere((i) => i.id == itemId);
+      final index = from.indexWhere((i) => i.id == itemId);
       if (index == -1) return;
-      final item = from.items.removeAt(index);
-      to.items.insert(toIndex.clamp(0, to.items.length), item);
+      final item = from.removeAt(index);
+      to.insert(toIndex.clamp(0, to.length), item);
     });
   }
 
@@ -261,6 +274,9 @@ class AppStore extends ChangeNotifier {
     _mutate(() {
       final list = byId(listId);
       if (list == null) return;
+      for (final i in list.items) {
+        i.checked = false;
+      }
       for (final c in list.categories) {
         for (final i in c.items) {
           i.checked = false;
@@ -356,42 +372,59 @@ class AppStore extends ChangeNotifier {
         presetById(presetId)?.categories.removeWhere((c) => c.id == catId));
   }
 
-  void presetAddItem(String presetId, String catId, String name) {
-    _mutate(() =>
-        _presetCat(presetId, catId)?.items.add(Item(id: newId(), name: name)));
+  /// Loose preset items when [catId] is null, else the preset category's items.
+  List<Item>? _presetItemsIn(String presetId, String? catId) {
+    final preset = presetById(presetId);
+    if (preset == null) return null;
+    if (catId == null) return preset.items;
+    return _presetCat(presetId, catId)?.items;
   }
 
-  void presetInsertItem(String presetId, String catId, int index, Item item) {
+  void presetAddItem(String presetId, String? catId, String name) {
+    _mutate(() =>
+        _presetItemsIn(presetId, catId)?.add(Item(id: newId(), name: name)));
+  }
+
+  void presetInsertItem(String presetId, String? catId, int index, Item item) {
     _mutate(() {
-      final cat = _presetCat(presetId, catId);
-      if (cat == null) return;
-      cat.items.insert(index.clamp(0, cat.items.length), item);
+      final items = _presetItemsIn(presetId, catId);
+      if (items == null) return;
+      items.insert(index.clamp(0, items.length), item);
     });
   }
 
-  void presetRenameItem(String presetId, String catId, String itemId, String name) {
+  void presetRenameItem(
+      String presetId, String? catId, String itemId, String name) {
     _mutate(() {
-      final item = _presetCat(presetId, catId)
-          ?.items
-          .where((i) => i.id == itemId)
+      final item = _presetItemsIn(presetId, catId)
+          ?.where((i) => i.id == itemId)
           .firstOrNull;
       if (item != null) item.name = name;
     });
   }
 
-  void presetDeleteItem(String presetId, String catId, String itemId) {
+  void presetDeleteItem(String presetId, String? catId, String itemId) {
     _mutate(() =>
-        _presetCat(presetId, catId)?.items.removeWhere((i) => i.id == itemId));
+        _presetItemsIn(presetId, catId)?.removeWhere((i) => i.id == itemId));
   }
 
-  /// Pours a preset into a list. Categories with a name matching an existing
-  /// category (case-insensitive) merge into it; items whose name already
-  /// exists anywhere in that category are skipped so nothing duplicates.
+  /// Pours a preset into a list. Loose preset items merge into the list's loose
+  /// items; categories whose name matches an existing category (case-insensitive)
+  /// merge into it. In both buckets, items whose name already exists there are
+  /// skipped so nothing duplicates.
   void addPresetToList(String listId, String presetId) {
     final preset = presetById(presetId);
     final list = byId(listId);
     if (preset == null || list == null) return;
     _mutate(() {
+      // Loose items → list's loose items.
+      final looseHave = list.items.map((i) => i.name.toLowerCase()).toSet();
+      for (final item in preset.items) {
+        if (looseHave.add(item.name.toLowerCase())) {
+          list.items.add(Item(id: newId(), name: item.name));
+        }
+      }
+      // Categories → matching category or appended.
       for (final presetCat in preset.categories) {
         final existing = list.categories
             .where((c) => c.name.toLowerCase() == presetCat.name.toLowerCase())

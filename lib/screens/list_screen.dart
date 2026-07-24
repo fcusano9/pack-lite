@@ -35,17 +35,23 @@ class _CatHeaderRow extends _Row {
   final PackCategory cat;
 }
 
+/// An item row. [cat] is null for loose items (not in any category).
+/// [firstInCard] is true only for the first loose item, which rounds the top
+/// of the header-less loose card.
 class _ItemRow extends _Row {
-  _ItemRow(this.cat, this.item, {required this.isLastInCard})
+  _ItemRow(this.cat, this.item, {this.firstInCard = false})
       : super('i-${item.id}');
-  final PackCategory cat;
+  final PackCategory? cat;
   final Item item;
-  final bool isLastInCard;
+  final bool firstInCard;
 }
 
+/// The inline "Add item" row. [cat] is null for the loose add row. [roundTop]
+/// is true when it's also the top of its card (a loose section with no items).
 class _AddRow extends _Row {
-  _AddRow(this.cat) : super('a-${cat.id}');
-  final PackCategory cat;
+  _AddRow(this.cat, {this.roundTop = false}) : super('a-${cat?.id ?? 'loose'}');
+  final PackCategory? cat;
+  final bool roundTop;
 }
 
 class _PackedHeaderRow extends _Row {
@@ -58,11 +64,12 @@ class _PackedLabelRow extends _Row {
   final PackCategory cat;
 }
 
+/// A packed (checked) item row. [cat] is null for loose packed items.
 class _PackedItemRow extends _Row {
   _PackedItemRow(this.cat, this.item,
       {required this.isFirst, required this.isLast})
       : super('pi-${item.id}');
-  final PackCategory cat;
+  final PackCategory? cat;
   final Item item;
   final bool isFirst;
   final bool isLast;
@@ -71,7 +78,10 @@ class _PackedItemRow extends _Row {
 class _ListScreenState extends State<ListScreen> {
   final Set<String> _collapsed = {};
   bool _packedCollapsed = false;
-  String? _addingCatId;
+  // Inline-add state: [_adding] is whether a row is open; [_addCatId] is which
+  // bucket it targets (null = the loose section).
+  bool _adding = false;
+  String? _addCatId;
   final TextEditingController _addCtrl = TextEditingController();
   final FocusNode _addFocus = FocusNode();
   final Set<String> _pendingCheck = {};
@@ -95,9 +105,9 @@ class _ListScreenState extends State<ListScreen> {
 
   // ---- check-off ----
 
-  void _toggle(PackCategory cat, Item item) {
+  void _toggle(PackCategory? cat, Item item) {
     if (item.checked) {
-      _store.setItemChecked(widget.listId, cat.id, item.id, false);
+      _store.setItemChecked(widget.listId, cat?.id, item.id, false);
       return;
     }
     if (_pendingCheck.contains(item.id)) return;
@@ -108,7 +118,7 @@ class _ListScreenState extends State<ListScreen> {
     Future.delayed(const Duration(milliseconds: 350), () {
       if (!mounted) return;
       setState(() => _pendingCheck.remove(item.id));
-      _store.setItemChecked(widget.listId, cat.id, item.id, true);
+      _store.setItemChecked(widget.listId, cat?.id, item.id, true);
     });
   }
 
@@ -128,19 +138,28 @@ class _ListScreenState extends State<ListScreen> {
   // ---- inline add ----
 
   void _commitAdd({required bool keepOpen}) {
-    final catId = _addingCatId;
-    if (catId == null) return;
+    if (!_adding) return;
     final text = _addCtrl.text.trim();
     if (text.isNotEmpty) {
-      _store.addItem(widget.listId, catId, text);
+      _store.addItem(widget.listId, _addCatId, text);
       Haptics.tap();
     }
     _addCtrl.clear();
     if (keepOpen && text.isNotEmpty) {
       _addFocus.requestFocus();
     } else {
-      setState(() => _addingCatId = null);
+      setState(() => _adding = false);
     }
+  }
+
+  /// Opens the inline add row for [cat] (null = loose section).
+  void _openAdd(PackCategory? cat) {
+    _commitAdd(keepOpen: false);
+    setState(() {
+      _adding = true;
+      _addCatId = cat?.id;
+    });
+    _addCtrl.clear();
   }
 
   // ---- dialogs & menus ----
@@ -277,9 +296,10 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  void _deleteItem(PackCategory cat, Item item) {
-    final modelIndex = cat.items.indexWhere((i) => i.id == item.id);
-    _store.deleteItem(widget.listId, cat.id, item.id);
+  void _deleteItem(PackCategory? cat, Item item) {
+    final bucket = cat?.items ?? _store.byId(widget.listId)?.items ?? const [];
+    final modelIndex = bucket.indexWhere((i) => i.id == item.id);
+    _store.deleteItem(widget.listId, cat?.id, item.id);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
@@ -289,7 +309,7 @@ class _ListScreenState extends State<ListScreen> {
           action: SnackBarAction(
             label: 'Undo',
             onPressed: () =>
-                _store.insertItem(widget.listId, cat.id, modelIndex, item),
+                _store.insertItem(widget.listId, cat?.id, modelIndex, item),
           ),
         ),
       );
@@ -299,20 +319,39 @@ class _ListScreenState extends State<ListScreen> {
 
   List<_Row> _buildRows(PackingList list) {
     final rows = <_Row>[];
+
+    // Loose section at the top. Shown when there are loose items or the list
+    // has no categories at all (so a flat list always has its add row).
+    final looseUnchecked = list.items.where((i) => !i.checked).toList();
+    if (list.items.isNotEmpty || list.categories.isEmpty) {
+      for (var k = 0; k < looseUnchecked.length; k++) {
+        rows.add(_ItemRow(null, looseUnchecked[k], firstInCard: k == 0));
+      }
+      rows.add(_AddRow(null, roundTop: looseUnchecked.isEmpty));
+    }
+
+    // Categories.
     for (final cat in list.categories) {
       rows.add(_CatHeaderRow(cat));
       if (!_collapsed.contains(cat.id)) {
         final unchecked = cat.items.where((i) => !i.checked).toList();
-        for (var k = 0; k < unchecked.length; k++) {
-          rows.add(_ItemRow(cat, unchecked[k], isLastInCard: false));
+        for (final it in unchecked) {
+          rows.add(_ItemRow(cat, it));
         }
         rows.add(_AddRow(cat));
       }
     }
+
+    // Packed section: loose packed first (no label), then labeled categories.
     final packedCount = list.packedItems;
     if (packedCount > 0 && !list.hidePacked) {
       rows.add(_PackedHeaderRow(packedCount));
       if (!_packedCollapsed) {
+        final loosePacked = list.items.where((i) => i.checked).toList();
+        for (var k = 0; k < loosePacked.length; k++) {
+          rows.add(_PackedItemRow(null, loosePacked[k],
+              isFirst: k == 0, isLast: k == loosePacked.length - 1));
+        }
         for (final cat in list.categories) {
           final checked = cat.items.where((i) => i.checked).toList();
           if (checked.isEmpty) continue;
@@ -327,8 +366,11 @@ class _ListScreenState extends State<ListScreen> {
     return rows;
   }
 
-  int _modelInsertIndex(PackCategory cat, String draggedId, int uncheckedPos) {
-    final items = cat.items.where((i) => i.id != draggedId).toList();
+  /// The model index at which to insert the dragged item so it lands at
+  /// [uncheckedPos] among the unchecked items of [cat] (null = loose bucket).
+  int _modelInsertIndex(PackCategory? cat, String draggedId, int uncheckedPos) {
+    final bucket = cat?.items ?? _store.byId(widget.listId)?.items ?? const [];
+    final items = bucket.where((i) => i.id != draggedId).toList();
     var seen = 0;
     for (var k = 0; k < items.length; k++) {
       if (!items[k].checked) {
@@ -344,46 +386,32 @@ class _ListScreenState extends State<ListScreen> {
     if (dragged is! _ItemRow) return;
 
     final remaining = [...rows]..removeAt(oldIndex);
+    // Default target is the loose section (null), since it sits at the top.
     PackCategory? targetCat;
     var uncheckedPos = 0;
     var inPacked = false;
-    PackCategory? lastCat;
 
     for (var k = 0; k < newIndex && k < remaining.length; k++) {
       final row = remaining[k];
       if (row is _CatHeaderRow) {
-        lastCat = row.cat;
         targetCat = row.cat;
         uncheckedPos = 0;
       } else if (row is _ItemRow) {
-        if (row.cat.id == targetCat?.id) uncheckedPos++;
-      } else if (row is _AddRow) {
-        // Dropping past the add row keeps the item at the end of that card.
+        if (row.cat?.id == targetCat?.id) uncheckedPos++;
       } else if (row is _PackedHeaderRow) {
         inPacked = true;
+        break;
       }
     }
 
-    if (inPacked || targetCat == null) {
-      // Dropped above the first category or into the Packed section: clamp
-      // to the end of the nearest real category.
-      targetCat = inPacked ? (lastCat ?? dragged.cat) : list0(rows);
-      if (targetCat == null) return;
-      uncheckedPos =
-          inPacked ? targetCat.items.where((i) => !i.checked).length : 0;
+    if (inPacked) {
+      // Dropped into the Packed area: clamp to the end of the current bucket.
+      uncheckedPos = 1 << 30;
     }
 
-    final insertAt =
-        _modelInsertIndex(targetCat, dragged.item.id, uncheckedPos);
-    _store.moveItem(
-        widget.listId, dragged.cat.id, dragged.item.id, targetCat.id, insertAt);
-  }
-
-  PackCategory? list0(List<_Row> rows) {
-    for (final row in rows) {
-      if (row is _CatHeaderRow) return row.cat;
-    }
-    return null;
+    final insertAt = _modelInsertIndex(targetCat, dragged.item.id, uncheckedPos);
+    _store.moveItem(widget.listId, dragged.cat?.id, dragged.item.id,
+        targetCat?.id, insertAt);
   }
 
   // ---- build ----
@@ -425,9 +453,10 @@ class _ListScreenState extends State<ListScreen> {
               rounded: false,
             ),
             Expanded(
-              child: list.categories.isEmpty
-                  ? _EmptyList(onAdd: () =>
-                      showCategorySheet(context, listId: widget.listId))
+              child: (list.items.isEmpty &&
+                      list.categories.isEmpty &&
+                      !_adding)
+                  ? _EmptyList(onAddItem: () => _openAdd(null))
                   : ReorderableListView.builder(
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
                       buildDefaultDragHandles: false,
@@ -534,12 +563,18 @@ class _ListScreenState extends State<ListScreen> {
           ),
         );
 
-      case _ItemRow(:final cat, :final item):
+      case _ItemRow(:final cat, :final item, :final firstInCard):
         final checked = item.checked || _pendingCheck.contains(item.id);
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: h.card,
+          clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
+          decoration: BoxDecoration(
+            color: h.card,
+            borderRadius: firstInCard
+                ? const BorderRadius.vertical(top: Radius.circular(12))
+                : null,
+          ),
           child: ReorderableDelayedDragStartListener(
             index: index,
             child: Dismissible(
@@ -559,9 +594,10 @@ class _ListScreenState extends State<ListScreen> {
                 onTap: () => _toggle(cat, item),
                 enableFeedback: false,
                 child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: h.line)),
-                  ),
+                  decoration: firstInCard
+                      ? null
+                      : BoxDecoration(
+                          border: Border(top: BorderSide(color: h.line))),
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
                   child: Row(
                     children: [
@@ -583,30 +619,26 @@ class _ListScreenState extends State<ListScreen> {
           ),
         );
 
-      case _AddRow(:final cat):
-        final active = _addingCatId == cat.id;
+      case _AddRow(:final cat, :final roundTop):
+        final active = _adding && _addCatId == cat?.id;
+        final radius = roundTop
+            ? BorderRadius.circular(12)
+            : const BorderRadius.vertical(bottom: Radius.circular(12));
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: active ? h.accentSoft : h.card,
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(12)),
+            borderRadius: radius,
           ),
           child: InkWell(
-            onTap: active
-                ? null
-                : () {
-                    _commitAdd(keepOpen: false);
-                    setState(() => _addingCatId = cat.id);
-                    _addCtrl.clear();
-                  },
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(12)),
+            onTap: active ? null : () => _openAdd(cat),
+            borderRadius: radius,
             child: Container(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: h.line)),
-              ),
+              decoration: roundTop
+                  ? null
+                  : BoxDecoration(
+                      border: Border(top: BorderSide(color: h.line))),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(
@@ -772,7 +804,7 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  Future<void> _renameItem(PackCategory cat, Item item) async {
+  Future<void> _renameItem(PackCategory? cat, Item item) async {
     final h = context.harbor;
     final ctrl = TextEditingController(text: item.name);
     final name = await showDialog<String>(
@@ -799,7 +831,7 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
     if (name != null && name.isNotEmpty && name != item.name) {
-      _store.renameItem(widget.listId, cat.id, item.id, name);
+      _store.renameItem(widget.listId, cat?.id, item.id, name);
     }
   }
 
@@ -993,40 +1025,59 @@ class _Checkbox extends StatelessWidget {
 }
 
 class _EmptyList extends StatelessWidget {
-  const _EmptyList({required this.onAdd});
+  const _EmptyList({required this.onAddItem});
 
-  final VoidCallback onAdd;
+  final VoidCallback onAddItem;
 
   @override
   Widget build(BuildContext context) {
     final h = context.harbor;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 44),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('🧳', style: TextStyle(fontSize: 44)),
+            const Text('📝', style: TextStyle(fontSize: 42)),
             const SizedBox(height: 14),
             Text(
-              'Nothing here yet',
+              'Start your list',
               style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: h.ink),
+                  fontSize: 15.5, fontWeight: FontWeight.w700, color: h.ink),
             ),
             const SizedBox(height: 6),
             Text(
-              'Add a category, then fill it with items.',
+              'Add items one by one — no setup needed.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: h.mut, height: 1.5),
             ),
-            const SizedBox(height: 14),
-            TextButton(
-              onPressed: onAdd,
-              child: Text('New Category',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: h.accent)),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onAddItem,
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add item'),
+              style: FilledButton.styleFrom(
+                backgroundColor: h.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(11)),
+                textStyle:
+                    const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text.rich(
+              TextSpan(
+                text: 'Want structure? The ',
+                children: const [
+                  TextSpan(
+                      text: '+',
+                      style: TextStyle(fontWeight: FontWeight.w800)),
+                  TextSpan(text: ' up top adds a category or preset.'),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11.5, color: h.mut),
             ),
           ],
         ),
