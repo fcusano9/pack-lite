@@ -65,12 +65,16 @@ jobs:
             echo "storeFile=packlite-release.jks"
           } > android/key.properties
 
-      - name: Build release APK (arm64)
-        run: flutter build apk --release --target-platform android-arm64
+      # Use --split-per-abi so the arm64 APK's versionCode carries Flutter's ABI
+      # offset (arm64 => +2000, e.g. 2005 for pubspec 1.0.0+5). Local dev builds
+      # use --split-per-abi too, so the codes match and a CI APK installs right
+      # over a locally-installed build instead of being blocked as a downgrade.
+      - name: Build release APK
+        run: flutter build apk --release --split-per-abi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: pack-lite-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error
