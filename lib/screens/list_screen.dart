@@ -450,6 +450,7 @@ class _ListScreenState extends State<ListScreen> {
               height: 3,
               rounded: false,
             ),
+            if (list.isReady) const _AllPackedCard(),
             Expanded(
               child: (list.items.isEmpty &&
                       list.categories.isEmpty &&
@@ -1010,6 +1011,51 @@ class _Checkbox extends StatelessWidget {
       child: checked
           ? const Icon(Icons.check_rounded, size: 17, color: Colors.white)
           : null,
+    );
+  }
+}
+
+/// A persistent "you're done" banner shown at the top of the list once every
+/// item is packed. The confetti burst is a one-time celebration; this stays.
+class _AllPackedCard extends StatelessWidget {
+  const _AllPackedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final harbor = context.harbor;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: harbor.good.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: harbor.good.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_rounded, color: harbor.good, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'All packed',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: harbor.good),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Everything's checked off — you're ready to go.",
+                  style: TextStyle(fontSize: 12.5, color: harbor.good),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
