@@ -207,6 +207,15 @@ class AppStore extends ChangeNotifier {
     _mutate(() => byId(listId)?.categories.removeWhere((category) => category.id == categoryId));
   }
 
+  void reorderCategories(String listId, int oldIndex, int newIndex) {
+    _mutate(() {
+      final list = byId(listId);
+      if (list == null) return;
+      final category = list.categories.removeAt(oldIndex);
+      list.categories.insert(newIndex, category);
+    });
+  }
+
   // ---- items ----
   //
   // Category is optional: a null [categoryId] targets the list's loose items,

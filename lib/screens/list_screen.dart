@@ -6,6 +6,7 @@ import '../models.dart';
 import '../sheets/category_sheet.dart';
 import '../sheets/new_list_sheet.dart';
 import '../sheets/preset_picker.dart';
+import '../sheets/reorder_categories_sheet.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../sound.dart';
@@ -258,6 +259,17 @@ class _ListScreenState extends State<ListScreen> {
                 showCategorySheet(context, listId: widget.listId, edit: category);
               },
             ),
+            if (list.categories.length >= 2)
+              ListTile(
+                leading:
+                    Icon(Icons.swap_vert_rounded, size: 20, color: harbor.ink),
+                title: Text('Reorder categories',
+                    style: TextStyle(fontSize: 14.5, color: harbor.ink)),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showReorderCategoriesSheet(context, listId: widget.listId);
+                },
+              ),
             ListTile(
               leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
               title: Text('Save as preset',
