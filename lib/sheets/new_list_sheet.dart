@@ -67,7 +67,7 @@ class _NewListSheetState extends State<_NewListSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final editing = widget.edit != null;
 
     return SafeArea(
@@ -80,7 +80,7 @@ class _NewListSheetState extends State<_NewListSheet> {
             height: 5,
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: h.line,
+              color: harbor.line,
               borderRadius: BorderRadius.circular(3),
             ),
           ),
@@ -93,7 +93,7 @@ class _NewListSheetState extends State<_NewListSheet> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text('Cancel',
-                        style: TextStyle(fontSize: 14, color: h.accent)),
+                        style: TextStyle(fontSize: 14, color: harbor.accent)),
                   ),
                 ),
                 Expanded(
@@ -103,7 +103,7 @@ class _NewListSheetState extends State<_NewListSheet> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: h.ink,
+                        color: harbor.ink,
                       ),
                     ),
                   ),
@@ -122,7 +122,7 @@ class _NewListSheetState extends State<_NewListSheet> {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: h.tile,
+                    color: harbor.tile,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   alignment: Alignment.center,
@@ -135,7 +135,7 @@ class _NewListSheetState extends State<_NewListSheet> {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: h.card,
+                      color: harbor.card,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -146,7 +146,7 @@ class _NewListSheetState extends State<_NewListSheet> {
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: Icon(Icons.edit, size: 12, color: h.mut),
+                    child: Icon(Icons.edit, size: 12, color: harbor.mut),
                   ),
                 ),
               ],
@@ -161,12 +161,12 @@ class _NewListSheetState extends State<_NewListSheet> {
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _save(),
-              style: TextStyle(fontSize: 15, color: h.ink),
+              style: TextStyle(fontSize: 15, color: harbor.ink),
               decoration: InputDecoration(
                 hintText: 'List name',
-                hintStyle: TextStyle(color: h.mut),
+                hintStyle: TextStyle(color: harbor.mut),
                 filled: true,
-                fillColor: h.bg,
+                fillColor: harbor.bg,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
@@ -185,8 +185,8 @@ class _NewListSheetState extends State<_NewListSheet> {
               child: FilledButton(
                 onPressed: _canSave ? _save : null,
                 style: FilledButton.styleFrom(
-                  backgroundColor: h.accent,
-                  disabledBackgroundColor: h.accent.withValues(alpha: 0.35),
+                  backgroundColor: harbor.accent,
+                  disabledBackgroundColor: harbor.accent.withValues(alpha: 0.35),
                   foregroundColor: Colors.white,
                   disabledForegroundColor: Colors.white70,
                   shape: RoundedRectangleBorder(
@@ -205,7 +205,7 @@ class _NewListSheetState extends State<_NewListSheet> {
   }
 
   Widget _presetChips(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final presets = context.read<AppStore>().presets;
     if (presets.isEmpty) return const SizedBox(height: 4);
     return Column(
@@ -219,7 +219,7 @@ class _NewListSheetState extends State<_NewListSheet> {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.7,
-              color: h.mut,
+              color: harbor.mut,
             ),
           ),
         ),
@@ -257,17 +257,17 @@ class _PresetChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? h.accentSoft : Colors.transparent,
+          color: selected ? harbor.accentSoft : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected ? h.accent : h.line,
+            color: selected ? harbor.accent : harbor.line,
             width: 1.5,
           ),
         ),
@@ -277,14 +277,14 @@ class _PresetChip extends StatelessWidget {
             if (selected)
               Padding(
                 padding: const EdgeInsets.only(right: 5),
-                child: Icon(Icons.check_rounded, size: 15, color: h.accent),
+                child: Icon(Icons.check_rounded, size: 15, color: harbor.accent),
               ),
             Text(
               preset.name,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: selected ? h.accent : h.mut,
+                color: selected ? harbor.accent : harbor.mut,
               ),
             ),
           ],

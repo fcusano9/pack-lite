@@ -6,14 +6,14 @@ import 'package:flutter/foundation.dart';
 /// Explicitly routed to the MEDIA stream on Android (usage: media, no audio
 /// focus) so playback follows media volume and is never gated by the
 /// system "touch sounds" setting.
-class Sfx {
+class SoundEffects {
   static final List<AudioPlayer> _pool = [];
   static AudioPlayer? _big;
   static bool _ready = false;
 
   static Future<void> init() async {
     try {
-      final ctx = AudioContext(
+      final audioContext = AudioContext(
         android: const AudioContextAndroid(
           contentType: AndroidContentType.sonification,
           usageType: AndroidUsageType.media,
@@ -24,18 +24,18 @@ class Sfx {
           options: const {},
         ),
       );
-      for (var k = 0; k < 3; k++) {
-        final p = AudioPlayer();
-        await p.setAudioContext(ctx);
-        await p.setReleaseMode(ReleaseMode.stop);
-        _pool.add(p);
+      for (var index = 0; index < 3; index++) {
+        final player = AudioPlayer();
+        await player.setAudioContext(audioContext);
+        await player.setReleaseMode(ReleaseMode.stop);
+        _pool.add(player);
       }
       _big = AudioPlayer();
-      await _big!.setAudioContext(ctx);
+      await _big!.setAudioContext(audioContext);
       await _big!.setReleaseMode(ReleaseMode.stop);
       _ready = true;
     } catch (e) {
-      debugPrint('Sfx init failed: $e');
+      debugPrint('SoundEffects init failed: $e');
     }
   }
 
@@ -43,9 +43,9 @@ class Sfx {
 
   static void pop() {
     if (!_ready) return;
-    final p = _pool[_next++ % _pool.length];
-    p.stop();
-    p.play(AssetSource('sounds/pop.wav'), volume: 0.9);
+    final player = _pool[_next++ % _pool.length];
+    player.stop();
+    player.play(AssetSource('sounds/pop.wav'), volume: 0.9);
   }
 
   static void popBig() {

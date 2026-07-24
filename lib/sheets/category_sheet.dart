@@ -94,7 +94,7 @@ class _CategorySheetState extends State<_CategorySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final editing = widget.edit != null;
 
     return SafeArea(
@@ -107,7 +107,7 @@ class _CategorySheetState extends State<_CategorySheet> {
             height: 5,
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: h.line,
+              color: harbor.line,
               borderRadius: BorderRadius.circular(3),
             ),
           ),
@@ -120,7 +120,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text('Cancel',
-                        style: TextStyle(fontSize: 14, color: h.accent)),
+                        style: TextStyle(fontSize: 14, color: harbor.accent)),
                   ),
                 ),
                 Expanded(
@@ -134,7 +134,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: h.ink,
+                        color: harbor.ink,
                       ),
                     ),
                   ),
@@ -153,15 +153,15 @@ class _CategorySheetState extends State<_CategorySheet> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: h.tile,
+                    color: harbor.tile,
                     borderRadius: BorderRadius.circular(14),
                     border: _icon == null
-                        ? Border.all(color: h.line, width: 1.5)
+                        ? Border.all(color: harbor.line, width: 1.5)
                         : null,
                   ),
                   alignment: Alignment.center,
                   child: _icon == null
-                      ? Icon(Icons.add_reaction_outlined, size: 20, color: h.mut)
+                      ? Icon(Icons.add_reaction_outlined, size: 20, color: harbor.mut)
                       : Text(_icon!, style: const TextStyle(fontSize: 26)),
                 ),
               ),
@@ -169,7 +169,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                 TextButton(
                   onPressed: () => setState(() => _icon = null),
                   child: Text('Remove icon',
-                      style: TextStyle(fontSize: 12.5, color: h.mut)),
+                      style: TextStyle(fontSize: 12.5, color: harbor.mut)),
                 ),
             ],
           ),
@@ -178,7 +178,7 @@ class _CategorySheetState extends State<_CategorySheet> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Text(
                 'Icon is optional for categories',
-                style: TextStyle(fontSize: 11.5, color: h.mut),
+                style: TextStyle(fontSize: 11.5, color: harbor.mut),
               ),
             ),
           Padding(
@@ -190,12 +190,12 @@ class _CategorySheetState extends State<_CategorySheet> {
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _save(),
-              style: TextStyle(fontSize: 15, color: h.ink),
+              style: TextStyle(fontSize: 15, color: harbor.ink),
               decoration: InputDecoration(
                 hintText: _isMeta ? 'Preset name' : 'Category name',
-                hintStyle: TextStyle(color: h.mut),
+                hintStyle: TextStyle(color: harbor.mut),
                 filled: true,
-                fillColor: h.bg,
+                fillColor: harbor.bg,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
@@ -213,8 +213,8 @@ class _CategorySheetState extends State<_CategorySheet> {
               child: FilledButton(
                 onPressed: _canSave ? _save : null,
                 style: FilledButton.styleFrom(
-                  backgroundColor: h.accent,
-                  disabledBackgroundColor: h.accent.withValues(alpha: 0.35),
+                  backgroundColor: harbor.accent,
+                  disabledBackgroundColor: harbor.accent.withValues(alpha: 0.35),
                   foregroundColor: Colors.white,
                   disabledForegroundColor: Colors.white70,
                   shape: RoundedRectangleBorder(

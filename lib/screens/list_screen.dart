@@ -30,27 +30,27 @@ sealed class _Row {
   final String key;
 }
 
-class _CatHeaderRow extends _Row {
-  _CatHeaderRow(this.cat) : super('h-${cat.id}');
-  final PackCategory cat;
+class _CategoryHeaderRow extends _Row {
+  _CategoryHeaderRow(this.category) : super('header-${category.id}');
+  final PackCategory category;
 }
 
-/// An item row. [cat] is null for loose items (not in any category).
+/// An item row. [category] is null for loose items (not in any category).
 /// [firstInCard] is true only for the first loose item, which rounds the top
 /// of the header-less loose card.
 class _ItemRow extends _Row {
-  _ItemRow(this.cat, this.item, {this.firstInCard = false})
-      : super('i-${item.id}');
-  final PackCategory? cat;
+  _ItemRow(this.category, this.item, {this.firstInCard = false})
+      : super('item-${item.id}');
+  final PackCategory? category;
   final Item item;
   final bool firstInCard;
 }
 
-/// The inline "Add item" row. [cat] is null for the loose add row. [roundTop]
+/// The inline "Add item" row. [category] is null for the loose add row. [roundTop]
 /// is true when it's also the top of its card (a loose section with no items).
 class _AddRow extends _Row {
-  _AddRow(this.cat, {this.roundTop = false}) : super('a-${cat?.id ?? 'loose'}');
-  final PackCategory? cat;
+  _AddRow(this.category, {this.roundTop = false}) : super('a-${category?.id ?? 'loose'}');
+  final PackCategory? category;
   final bool roundTop;
 }
 
@@ -60,16 +60,16 @@ class _PackedHeaderRow extends _Row {
 }
 
 class _PackedLabelRow extends _Row {
-  _PackedLabelRow(this.cat) : super('pl-${cat.id}');
-  final PackCategory cat;
+  _PackedLabelRow(this.category) : super('pl-${category.id}');
+  final PackCategory category;
 }
 
-/// A packed (checked) item row. [cat] is null for loose packed items.
+/// A packed (checked) item row. [category] is null for loose packed items.
 class _PackedItemRow extends _Row {
-  _PackedItemRow(this.cat, this.item,
+  _PackedItemRow(this.category, this.item,
       {required this.isFirst, required this.isLast})
       : super('pi-${item.id}');
-  final PackCategory? cat;
+  final PackCategory? category;
   final Item item;
   final bool isFirst;
   final bool isLast;
@@ -78,11 +78,11 @@ class _PackedItemRow extends _Row {
 class _ListScreenState extends State<ListScreen> {
   final Set<String> _collapsed = {};
   bool _packedCollapsed = false;
-  // Inline-add state: [_adding] is whether a row is open; [_addCatId] is which
+  // Inline-add state: [_adding] is whether a row is open; [_addCategoryId] is which
   // bucket it targets (null = the loose section).
   bool _adding = false;
-  String? _addCatId;
-  final TextEditingController _addCtrl = TextEditingController();
+  String? _addCategoryId;
+  final TextEditingController _addController = TextEditingController();
   final FocusNode _addFocus = FocusNode();
   final Set<String> _pendingCheck = {};
   bool _wasReady = false;
@@ -96,7 +96,7 @@ class _ListScreenState extends State<ListScreen> {
 
   @override
   void dispose() {
-    _addCtrl.dispose();
+    _addController.dispose();
     _addFocus.dispose();
     super.dispose();
   }
@@ -105,20 +105,20 @@ class _ListScreenState extends State<ListScreen> {
 
   // ---- check-off ----
 
-  void _toggle(PackCategory? cat, Item item) {
+  void _toggle(PackCategory? category, Item item) {
     if (item.checked) {
-      _store.setItemChecked(widget.listId, cat?.id, item.id, false);
+      _store.setItemChecked(widget.listId, category?.id, item.id, false);
       return;
     }
     if (_pendingCheck.contains(item.id)) return;
     Haptics.tap();
-    Sfx.pop();
+    SoundEffects.pop();
     setState(() => _pendingCheck.add(item.id));
     // Let the checkmark land for a beat before the row glides to Packed.
     Future.delayed(const Duration(milliseconds: 350), () {
       if (!mounted) return;
       setState(() => _pendingCheck.remove(item.id));
-      _store.setItemChecked(widget.listId, cat?.id, item.id, true);
+      _store.setItemChecked(widget.listId, category?.id, item.id, true);
     });
   }
 
@@ -128,7 +128,7 @@ class _ListScreenState extends State<ListScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         Haptics.celebrate();
-        Sfx.popBig();
+        SoundEffects.popBig();
         showCelebration(context);
       });
     }
@@ -139,12 +139,12 @@ class _ListScreenState extends State<ListScreen> {
 
   void _commitAdd({required bool keepOpen}) {
     if (!_adding) return;
-    final text = _addCtrl.text.trim();
+    final text = _addController.text.trim();
     if (text.isNotEmpty) {
-      _store.addItem(widget.listId, _addCatId, text);
+      _store.addItem(widget.listId, _addCategoryId, text);
       Haptics.tap();
     }
-    _addCtrl.clear();
+    _addController.clear();
     if (keepOpen && text.isNotEmpty) {
       _addFocus.requestFocus();
     } else {
@@ -152,21 +152,21 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
-  /// Opens the inline add row for [cat] (null = loose section).
-  void _openAdd(PackCategory? cat) {
+  /// Opens the inline add row for [category] (null = loose section).
+  void _openAdd(PackCategory? category) {
     _commitAdd(keepOpen: false);
     setState(() {
       _adding = true;
-      _addCatId = cat?.id;
+      _addCategoryId = category?.id;
     });
-    _addCtrl.clear();
+    _addController.clear();
   }
 
   // ---- dialogs & menus ----
 
   Future<bool> _confirm(String title, String message, String confirmLabel,
       {bool danger = true}) async {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -180,7 +180,7 @@ class _ListScreenState extends State<ListScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(confirmLabel,
-                style: TextStyle(color: danger ? h.danger : h.accent)),
+                style: TextStyle(color: danger ? harbor.danger : harbor.accent)),
           ),
         ],
       ),
@@ -212,8 +212,8 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Future<void> _uncheckAll(PackingList list) async {
-    final n = list.packedItems;
-    if (n == 0) return;
+    final packedCount = list.packedItems;
+    if (packedCount == 0) return;
     if (await _confirm('Uncheck all ${list.totalItems} items?',
         'Ready to pack for the next trip — nothing is deleted.', 'Uncheck All',
         danger: false)) {
@@ -231,8 +231,8 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
-  void _categoryMenu(PackingList list, PackCategory cat) {
-    final h = context.harbor;
+  void _categoryMenu(PackingList list, PackCategory category) {
+    final harbor = context.harbor;
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -245,47 +245,47 @@ class _ListScreenState extends State<ListScreen> {
               height: 5,
               margin: const EdgeInsets.only(top: 8, bottom: 6),
               decoration: BoxDecoration(
-                color: h.line,
+                color: harbor.line,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
             ListTile(
-              leading: Icon(Icons.edit_outlined, size: 20, color: h.ink),
+              leading: Icon(Icons.edit_outlined, size: 20, color: harbor.ink),
               title: Text('Rename & icon',
-                  style: TextStyle(fontSize: 14.5, color: h.ink)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                showCategorySheet(context, listId: widget.listId, edit: cat);
+                showCategorySheet(context, listId: widget.listId, edit: category);
               },
             ),
             ListTile(
-              leading: Icon(Icons.bookmark_add_outlined, size: 20, color: h.ink),
+              leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
               title: Text('Save as preset',
-                  style: TextStyle(fontSize: 14.5, color: h.ink)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _store.saveCategoryAsPreset(widget.listId, cat.id);
+                _store.saveCategoryAsPreset(widget.listId, category.id);
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
                   ..showSnackBar(SnackBar(
-                      content: Text('Saved "${cat.name}" as a preset')));
+                      content: Text('Saved "${category.name}" as a preset')));
               },
             ),
             ListTile(
               leading:
-                  Icon(Icons.delete_outline_rounded, size: 20, color: h.danger),
+                  Icon(Icons.delete_outline_rounded, size: 20, color: harbor.danger),
               title: Text('Delete category',
-                  style: TextStyle(fontSize: 14.5, color: h.danger)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.danger)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
-                final n = cat.items.length;
+                final itemCount = category.items.length;
                 if (await _confirm(
-                    'Delete "${cat.name}"?',
-                    n == 0
+                    'Delete "${category.name}"?',
+                    itemCount == 0
                         ? 'This category is empty.'
-                        : 'Its $n item${n == 1 ? '' : 's'} will be deleted too.',
+                        : 'Its $itemCount item${itemCount == 1 ? '' : 's'} will be deleted too.',
                     'Delete')) {
-                  _store.deleteCategory(widget.listId, cat.id);
+                  _store.deleteCategory(widget.listId, category.id);
                 }
               },
             ),
@@ -296,10 +296,10 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  void _deleteItem(PackCategory? cat, Item item) {
-    final bucket = cat?.items ?? _store.byId(widget.listId)?.items ?? const [];
-    final modelIndex = bucket.indexWhere((i) => i.id == item.id);
-    _store.deleteItem(widget.listId, cat?.id, item.id);
+  void _deleteItem(PackCategory? category, Item item) {
+    final bucket = category?.items ?? _store.byId(widget.listId)?.items ?? const [];
+    final modelIndex = bucket.indexWhere((bucketItem) => bucketItem.id == item.id);
+    _store.deleteItem(widget.listId, category?.id, item.id);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
@@ -309,7 +309,7 @@ class _ListScreenState extends State<ListScreen> {
           action: SnackBarAction(
             label: 'Undo',
             onPressed: () =>
-                _store.insertItem(widget.listId, cat?.id, modelIndex, item),
+                _store.insertItem(widget.listId, category?.id, modelIndex, item),
           ),
         ),
       );
@@ -322,23 +322,23 @@ class _ListScreenState extends State<ListScreen> {
 
     // Loose section at the top. Shown when there are loose items or the list
     // has no categories at all (so a flat list always has its add row).
-    final looseUnchecked = list.items.where((i) => !i.checked).toList();
+    final looseUnchecked = list.items.where((item) => !item.checked).toList();
     if (list.items.isNotEmpty || list.categories.isEmpty) {
-      for (var k = 0; k < looseUnchecked.length; k++) {
-        rows.add(_ItemRow(null, looseUnchecked[k], firstInCard: k == 0));
+      for (var index = 0; index < looseUnchecked.length; index++) {
+        rows.add(_ItemRow(null, looseUnchecked[index], firstInCard: index == 0));
       }
       rows.add(_AddRow(null, roundTop: looseUnchecked.isEmpty));
     }
 
     // Categories.
-    for (final cat in list.categories) {
-      rows.add(_CatHeaderRow(cat));
-      if (!_collapsed.contains(cat.id)) {
-        final unchecked = cat.items.where((i) => !i.checked).toList();
-        for (final it in unchecked) {
-          rows.add(_ItemRow(cat, it));
+    for (final category in list.categories) {
+      rows.add(_CategoryHeaderRow(category));
+      if (!_collapsed.contains(category.id)) {
+        final unchecked = category.items.where((item) => !item.checked).toList();
+        for (final item in unchecked) {
+          rows.add(_ItemRow(category, item));
         }
-        rows.add(_AddRow(cat));
+        rows.add(_AddRow(category));
       }
     }
 
@@ -347,18 +347,18 @@ class _ListScreenState extends State<ListScreen> {
     if (packedCount > 0 && !list.hidePacked) {
       rows.add(_PackedHeaderRow(packedCount));
       if (!_packedCollapsed) {
-        final loosePacked = list.items.where((i) => i.checked).toList();
-        for (var k = 0; k < loosePacked.length; k++) {
-          rows.add(_PackedItemRow(null, loosePacked[k],
-              isFirst: k == 0, isLast: k == loosePacked.length - 1));
+        final loosePacked = list.items.where((item) => item.checked).toList();
+        for (var index = 0; index < loosePacked.length; index++) {
+          rows.add(_PackedItemRow(null, loosePacked[index],
+              isFirst: index == 0, isLast: index == loosePacked.length - 1));
         }
-        for (final cat in list.categories) {
-          final checked = cat.items.where((i) => i.checked).toList();
+        for (final category in list.categories) {
+          final checked = category.items.where((item) => item.checked).toList();
           if (checked.isEmpty) continue;
-          rows.add(_PackedLabelRow(cat));
-          for (var k = 0; k < checked.length; k++) {
-            rows.add(_PackedItemRow(cat, checked[k],
-                isFirst: k == 0, isLast: k == checked.length - 1));
+          rows.add(_PackedLabelRow(category));
+          for (var index = 0; index < checked.length; index++) {
+            rows.add(_PackedItemRow(category, checked[index],
+                isFirst: index == 0, isLast: index == checked.length - 1));
           }
         }
       }
@@ -367,14 +367,14 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   /// The model index at which to insert the dragged item so it lands at
-  /// [uncheckedPos] among the unchecked items of [cat] (null = loose bucket).
-  int _modelInsertIndex(PackCategory? cat, String draggedId, int uncheckedPos) {
-    final bucket = cat?.items ?? _store.byId(widget.listId)?.items ?? const [];
-    final items = bucket.where((i) => i.id != draggedId).toList();
+  /// [uncheckedPos] among the unchecked items of [category] (null = loose bucket).
+  int _modelInsertIndex(PackCategory? category, String draggedId, int uncheckedPos) {
+    final bucket = category?.items ?? _store.byId(widget.listId)?.items ?? const [];
+    final items = bucket.where((item) => item.id != draggedId).toList();
     var seen = 0;
-    for (var k = 0; k < items.length; k++) {
-      if (!items[k].checked) {
-        if (seen == uncheckedPos) return k;
+    for (var index = 0; index < items.length; index++) {
+      if (!items[index].checked) {
+        if (seen == uncheckedPos) return index;
         seen++;
       }
     }
@@ -387,17 +387,17 @@ class _ListScreenState extends State<ListScreen> {
 
     final remaining = [...rows]..removeAt(oldIndex);
     // Default target is the loose section (null), since it sits at the top.
-    PackCategory? targetCat;
+    PackCategory? targetCategory;
     var uncheckedPos = 0;
     var inPacked = false;
 
-    for (var k = 0; k < newIndex && k < remaining.length; k++) {
-      final row = remaining[k];
-      if (row is _CatHeaderRow) {
-        targetCat = row.cat;
+    for (var index = 0; index < newIndex && index < remaining.length; index++) {
+      final row = remaining[index];
+      if (row is _CategoryHeaderRow) {
+        targetCategory = row.category;
         uncheckedPos = 0;
       } else if (row is _ItemRow) {
-        if (row.cat?.id == targetCat?.id) uncheckedPos++;
+        if (row.category?.id == targetCategory?.id) uncheckedPos++;
       } else if (row is _PackedHeaderRow) {
         inPacked = true;
         break;
@@ -409,16 +409,16 @@ class _ListScreenState extends State<ListScreen> {
       uncheckedPos = 1 << 30;
     }
 
-    final insertAt = _modelInsertIndex(targetCat, dragged.item.id, uncheckedPos);
-    _store.moveItem(widget.listId, dragged.cat?.id, dragged.item.id,
-        targetCat?.id, insertAt);
+    final insertAt = _modelInsertIndex(targetCategory, dragged.item.id, uncheckedPos);
+    _store.moveItem(widget.listId, dragged.category?.id, dragged.item.id,
+        targetCategory?.id, insertAt);
   }
 
   // ---- build ----
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final store = context.watch<AppStore>();
     final list = store.byId(widget.listId);
     if (list == null) {
@@ -441,7 +441,7 @@ class _ListScreenState extends State<ListScreen> {
               onTogglePacked: () =>
                   _store.setHidePacked(widget.listId, !list.hidePacked),
               onCollapseAll: () => setState(() =>
-                  _collapsed.addAll(list.categories.map((c) => c.id))),
+                  _collapsed.addAll(list.categories.map((category) => category.id))),
               onExpandAll: () => setState(_collapsed.clear),
               onSavePreset: () => _saveAsPreset(list),
               onDelete: () => _deleteList(list),
@@ -467,7 +467,7 @@ class _ListScreenState extends State<ListScreen> {
                         type: MaterialType.transparency,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: h.card,
+                            color: harbor.card,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
@@ -494,28 +494,28 @@ class _ListScreenState extends State<ListScreen> {
 
   Widget _buildRow(
       BuildContext context, PackingList list, List<_Row> rows, int index) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final row = rows[index];
 
     switch (row) {
-      case _CatHeaderRow(:final cat):
-        final collapsed = _collapsed.contains(cat.id);
-        final total = cat.items.length;
-        final packed = cat.items.where((i) => i.checked).length;
+      case _CategoryHeaderRow(:final category):
+        final collapsed = _collapsed.contains(category.id);
+        final total = category.items.length;
+        final packed = category.items.where((item) => item.checked).length;
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           decoration: BoxDecoration(
-            color: h.card,
+            color: harbor.card,
             borderRadius: collapsed
                 ? BorderRadius.circular(12)
                 : const BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: InkWell(
             onTap: () => setState(() {
-              collapsed ? _collapsed.remove(cat.id) : _collapsed.add(cat.id);
+              collapsed ? _collapsed.remove(category.id) : _collapsed.add(category.id);
             }),
-            onLongPress: () => _categoryMenu(list, cat),
+            onLongPress: () => _categoryMenu(list, category),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 7),
               child: Row(
@@ -523,20 +523,20 @@ class _ListScreenState extends State<ListScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        if (cat.icon != null) ...[
-                          Text(cat.icon!, style: const TextStyle(fontSize: 13)),
+                        if (category.icon != null) ...[
+                          Text(category.icon!, style: const TextStyle(fontSize: 13)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
                           child: Text(
-                            cat.name.toUpperCase(),
+                            category.name.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.7,
-                              color: h.mut,
+                              color: harbor.mut,
                             ),
                           ),
                         ),
@@ -546,7 +546,7 @@ class _ListScreenState extends State<ListScreen> {
                           style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: h.mut),
+                              color: harbor.mut),
                         ),
                       ],
                     ),
@@ -555,7 +555,7 @@ class _ListScreenState extends State<ListScreen> {
                     turns: collapsed ? -0.25 : 0,
                     duration: const Duration(milliseconds: 180),
                     child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 17, color: h.mut),
+                        size: 17, color: harbor.mut),
                   ),
                 ],
               ),
@@ -563,14 +563,14 @@ class _ListScreenState extends State<ListScreen> {
           ),
         );
 
-      case _ItemRow(:final cat, :final item, :final firstInCard):
+      case _ItemRow(:final category, :final item, :final firstInCard):
         final checked = item.checked || _pendingCheck.contains(item.id);
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
           decoration: BoxDecoration(
-            color: h.card,
+            color: harbor.card,
             borderRadius: firstInCard
                 ? const BorderRadius.vertical(top: Radius.circular(12))
                 : null,
@@ -580,24 +580,24 @@ class _ListScreenState extends State<ListScreen> {
             child: Dismissible(
               key: ValueKey('dis-${row.key}'),
               direction: DismissDirection.horizontal,
-              background: _renameBg(h),
-              secondaryBackground: _swipeBg(h, Alignment.centerRight),
+              background: _renameBg(harbor),
+              secondaryBackground: _swipeBg(harbor, Alignment.centerRight),
               confirmDismiss: (direction) async {
                 if (direction == DismissDirection.startToEnd) {
-                  _renameItem(cat, item);
+                  _renameItem(category, item);
                   return false;
                 }
                 return true;
               },
-              onDismissed: (_) => _deleteItem(cat, item),
+              onDismissed: (_) => _deleteItem(category, item),
               child: InkWell(
-                onTap: () => _toggle(cat, item),
+                onTap: () => _toggle(category, item),
                 enableFeedback: false,
                 child: Container(
                   decoration: firstInCard
                       ? null
                       : BoxDecoration(
-                          border: Border(top: BorderSide(color: h.line))),
+                          border: Border(top: BorderSide(color: harbor.line))),
                   padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
                   child: Row(
                     children: [
@@ -608,7 +608,7 @@ class _ListScreenState extends State<ListScreen> {
                           item.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 15, color: h.ink),
+                          style: TextStyle(fontSize: 15, color: harbor.ink),
                         ),
                       ),
                     ],
@@ -619,8 +619,8 @@ class _ListScreenState extends State<ListScreen> {
           ),
         );
 
-      case _AddRow(:final cat, :final roundTop):
-        final active = _adding && _addCatId == cat?.id;
+      case _AddRow(:final category, :final roundTop):
+        final active = _adding && _addCategoryId == category?.id;
         final radius = roundTop
             ? BorderRadius.circular(12)
             : const BorderRadius.vertical(bottom: Radius.circular(12));
@@ -628,17 +628,17 @@ class _ListScreenState extends State<ListScreen> {
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: active ? h.accentSoft : h.card,
+            color: active ? harbor.accentSoft : harbor.card,
             borderRadius: radius,
           ),
           child: InkWell(
-            onTap: active ? null : () => _openAdd(cat),
+            onTap: active ? null : () => _openAdd(category),
             borderRadius: radius,
             child: Container(
               decoration: roundTop
                   ? null
                   : BoxDecoration(
-                      border: Border(top: BorderSide(color: h.line))),
+                      border: Border(top: BorderSide(color: harbor.line))),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(
@@ -649,18 +649,18 @@ class _ListScreenState extends State<ListScreen> {
                         const SizedBox(width: 11),
                         Expanded(
                           child: TextField(
-                            controller: _addCtrl,
+                            controller: _addController,
                             focusNode: _addFocus,
                             autofocus: true,
                             textCapitalization: TextCapitalization.sentences,
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _commitAdd(keepOpen: true),
                             onTapOutside: (_) => _commitAdd(keepOpen: false),
-                            style: TextStyle(fontSize: 15, color: h.ink),
+                            style: TextStyle(fontSize: 15, color: harbor.ink),
                             decoration: InputDecoration(
                               isDense: true,
                               hintText: 'Item name',
-                              hintStyle: TextStyle(color: h.mut),
+                              hintStyle: TextStyle(color: harbor.mut),
                               border: InputBorder.none,
                             ),
                           ),
@@ -672,11 +672,11 @@ class _ListScreenState extends State<ListScreen> {
                         SizedBox(
                           width: 24,
                           child: Icon(Icons.add_rounded,
-                              size: 17, color: h.mut),
+                              size: 17, color: harbor.mut),
                         ),
                         const SizedBox(width: 11),
                         Text('Add item',
-                            style: TextStyle(fontSize: 14, color: h.mut)),
+                            style: TextStyle(fontSize: 14, color: harbor.mut)),
                       ],
                     ),
             ),
@@ -697,7 +697,7 @@ class _ListScreenState extends State<ListScreen> {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.7,
-                    color: h.mut,
+                    color: harbor.mut,
                   ),
                 ),
                 const Spacer(),
@@ -705,37 +705,37 @@ class _ListScreenState extends State<ListScreen> {
                   turns: _packedCollapsed ? -0.25 : 0,
                   duration: const Duration(milliseconds: 180),
                   child: Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 17, color: h.mut),
+                      size: 17, color: harbor.mut),
                 ),
               ],
             ),
           ),
         );
 
-      case _PackedLabelRow(:final cat):
+      case _PackedLabelRow(:final category):
         return Padding(
           key: ValueKey(row.key),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 3),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              cat.name.toUpperCase(),
+              category.name.toUpperCase(),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
-                color: h.mut.withValues(alpha: 0.75),
+                color: harbor.mut.withValues(alpha: 0.75),
               ),
             ),
           ),
         );
 
-      case _PackedItemRow(:final cat, :final item, :final isFirst, :final isLast):
+      case _PackedItemRow(:final category, :final item, :final isFirst, :final isLast):
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: h.card,
+            color: harbor.card,
             borderRadius: BorderRadius.vertical(
               top: isFirst ? const Radius.circular(12) : Radius.zero,
               bottom: isLast ? const Radius.circular(12) : Radius.zero,
@@ -745,24 +745,24 @@ class _ListScreenState extends State<ListScreen> {
           child: Dismissible(
             key: ValueKey('dis-${row.key}'),
             direction: DismissDirection.horizontal,
-            background: _renameBg(h),
-            secondaryBackground: _swipeBg(h, Alignment.centerRight),
+            background: _renameBg(harbor),
+            secondaryBackground: _swipeBg(harbor, Alignment.centerRight),
             confirmDismiss: (direction) async {
               if (direction == DismissDirection.startToEnd) {
-                _renameItem(cat, item);
+                _renameItem(category, item);
                 return false;
               }
               return true;
             },
-            onDismissed: (_) => _deleteItem(cat, item),
+            onDismissed: (_) => _deleteItem(category, item),
             child: InkWell(
-              onTap: () => _toggle(cat, item),
+              onTap: () => _toggle(category, item),
               enableFeedback: false,
               child: Container(
                 decoration: isFirst
                     ? null
                     : BoxDecoration(
-                        border: Border(top: BorderSide(color: h.line))),
+                        border: Border(top: BorderSide(color: harbor.line))),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
                 child: Row(
@@ -776,9 +776,9 @@ class _ListScreenState extends State<ListScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 15,
-                          color: h.mut,
+                          color: harbor.mut,
                           decoration: TextDecoration.lineThrough,
-                          decorationColor: h.mut,
+                          decorationColor: harbor.mut,
                         ),
                       ),
                     ),
@@ -791,9 +791,9 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
-  Widget _renameBg(Harbor h) {
+  Widget _renameBg(Harbor harbor) {
     return Container(
-      color: h.accent,
+      color: harbor.accent,
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: const Text(
@@ -804,18 +804,18 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  Future<void> _renameItem(PackCategory? cat, Item item) async {
-    final h = context.harbor;
-    final ctrl = TextEditingController(text: item.name);
+  Future<void> _renameItem(PackCategory? category, Item item) async {
+    final harbor = context.harbor;
+    final controller = TextEditingController(text: item.name);
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Rename item'),
         content: TextField(
-          controller: ctrl,
+          controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
           decoration: const InputDecoration(isDense: true),
         ),
         actions: [
@@ -824,20 +824,20 @@ class _ListScreenState extends State<ListScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
-            child: Text('Save', style: TextStyle(color: h.accent)),
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: Text('Save', style: TextStyle(color: harbor.accent)),
           ),
         ],
       ),
     );
     if (name != null && name.isNotEmpty && name != item.name) {
-      _store.renameItem(widget.listId, cat?.id, item.id, name);
+      _store.renameItem(widget.listId, category?.id, item.id, name);
     }
   }
 
-  Widget _swipeBg(Harbor h, Alignment alignment) {
+  Widget _swipeBg(Harbor harbor, Alignment alignment) {
     return Container(
-      color: h.danger,
+      color: harbor.danger,
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: const Text(
@@ -878,8 +878,8 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
-    final menuStyle = TextStyle(fontSize: 14, color: h.ink);
+    final harbor = context.harbor;
+    final menuStyle = TextStyle(fontSize: 14, color: harbor.ink);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 6, 6),
@@ -888,7 +888,7 @@ class _Header extends StatelessWidget {
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(Icons.arrow_back_ios_new_rounded,
-                size: 18, color: h.accent),
+                size: 18, color: harbor.accent),
           ),
           Expanded(
             child: GestureDetector(
@@ -906,7 +906,7 @@ class _Header extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: h.ink,
+                        color: harbor.ink,
                       ),
                     ),
                   ),
@@ -918,7 +918,7 @@ class _Header extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: h.tile,
+              color: harbor.tile,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -926,14 +926,14 @@ class _Header extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: h.mut,
+                color: harbor.mut,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.add_rounded, size: 24, color: h.accent),
-            color: h.card,
+            icon: Icon(Icons.add_rounded, size: 24, color: harbor.accent),
+            color: harbor.card,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) => switch (value) {
@@ -949,8 +949,8 @@ class _Header extends StatelessWidget {
             ],
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_horiz_rounded, size: 22, color: h.accent),
-            color: h.card,
+            icon: Icon(Icons.more_horiz_rounded, size: 22, color: harbor.accent),
+            color: harbor.card,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) => switch (value) {
@@ -988,7 +988,7 @@ class _Header extends StatelessWidget {
               PopupMenuItem(
                   value: 'delete',
                   child: Text('Delete List',
-                      style: TextStyle(fontSize: 14, color: h.danger))),
+                      style: TextStyle(fontSize: 14, color: harbor.danger))),
             ],
           ),
         ],
@@ -1004,7 +1004,7 @@ class _Checkbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final border = Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF48546A)
         : const Color(0xFFB6BEC9);
@@ -1013,9 +1013,9 @@ class _Checkbox extends StatelessWidget {
       width: 26,
       height: 26,
       decoration: BoxDecoration(
-        color: checked ? h.good : Colors.transparent,
+        color: checked ? harbor.good : Colors.transparent,
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: checked ? h.good : border, width: 2),
+        border: Border.all(color: checked ? harbor.good : border, width: 2),
       ),
       child: checked
           ? const Icon(Icons.check_rounded, size: 17, color: Colors.white)
@@ -1031,7 +1031,7 @@ class _EmptyList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 44),
@@ -1043,13 +1043,13 @@ class _EmptyList extends StatelessWidget {
             Text(
               'Start your list',
               style: TextStyle(
-                  fontSize: 15.5, fontWeight: FontWeight.w700, color: h.ink),
+                  fontSize: 15.5, fontWeight: FontWeight.w700, color: harbor.ink),
             ),
             const SizedBox(height: 6),
             Text(
               'Add items one by one — no setup needed.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: h.mut, height: 1.5),
+              style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -1057,7 +1057,7 @@ class _EmptyList extends StatelessWidget {
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Add item'),
               style: FilledButton.styleFrom(
-                backgroundColor: h.accent,
+                backgroundColor: harbor.accent,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(11)),
@@ -1077,7 +1077,7 @@ class _EmptyList extends StatelessWidget {
                 ],
               ),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11.5, color: h.mut),
+              style: TextStyle(fontSize: 11.5, color: harbor.mut),
             ),
           ],
         ),

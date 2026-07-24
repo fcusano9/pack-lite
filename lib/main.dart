@@ -15,10 +15,11 @@ Future<void> main() async {
   SemanticsBinding.instance.ensureSemantics();
   final store = AppStore();
   await store.load();
-  Sfx.init();
+  SoundEffects.init();
   Haptics.init();
   PackageInfo.fromPlatform()
-      .then((info) => AppInfo.version = 'v${info.version} (${info.buildNumber})')
+      .then((packageInfo) =>
+          AppInfo.version = 'v${packageInfo.version} (${packageInfo.buildNumber})')
       .catchError((_) => '');
   runApp(PackLiteApp(store: store));
 }
@@ -33,10 +34,10 @@ class PackLiteApp extends StatelessWidget {
     return ChangeNotifierProvider.value(
       value: store,
       child: Consumer<AppStore>(
-        builder: (context, s, _) => MaterialApp(
+        builder: (context, appStore, _) => MaterialApp(
           title: 'Pack Lite',
           debugShowCheckedModeBanner: false,
-          themeMode: s.themeMode,
+          themeMode: appStore.themeMode,
           theme: harborTheme(Harbor.light, Brightness.light),
           darkTheme: harborTheme(Harbor.dark, Brightness.dark),
           home: const HomeScreen(),

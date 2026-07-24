@@ -16,8 +16,8 @@ class DataIO {
   static Future<void> export(AppStore store) async {
     final json = store.exportJson();
     final stamp = DateTime.now().toIso8601String().split('T').first;
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/pack-lite-backup-$stamp.json');
+    final directory = await getTemporaryDirectory();
+    final file = File('${directory.path}/pack-lite-backup-$stamp.json');
     await file.writeAsString(json);
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'application/json')],

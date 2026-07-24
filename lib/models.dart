@@ -1,9 +1,9 @@
 import 'dart:math';
 
-final _rnd = Random();
+final _random = Random();
 
 String newId() =>
-    '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}${_rnd.nextInt(1 << 20).toRadixString(36)}';
+    '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}${_random.nextInt(1 << 20).toRadixString(36)}';
 
 class Item {
   Item({required this.id, required this.name, this.checked = false});
@@ -78,7 +78,7 @@ class Preset {
   final List<PackCategory> categories;
 
   int get totalItems =>
-      items.length + categories.fold(0, (sum, c) => sum + c.items.length);
+      items.length + categories.fold(0, (sum, category) => sum + category.items.length);
 
   factory Preset.fromJson(Map<String, dynamic> json) => Preset(
         id: json['id'] as String,
@@ -113,24 +113,24 @@ class Preset {
         id: newId(),
         name: name ?? list.name,
         icon: list.icon,
-        items: list.items.map((i) => i.copy()..checked = false).toList(),
-        categories: list.categories.map((c) => c.copy()).toList()
-          ..forEach((c) {
-            for (final i in c.items) {
-              i.checked = false;
+        items: list.items.map((item) => item.copy()..checked = false).toList(),
+        categories: list.categories.map((category) => category.copy()).toList()
+          ..forEach((category) {
+            for (final item in category.items) {
+              item.checked = false;
             }
           }),
       );
 
   /// Builds a single-category preset from one category of a list.
-  factory Preset.fromCategory(PackCategory cat, {required String icon}) {
-    final copied = cat.copy();
-    for (final i in copied.items) {
-      i.checked = false;
+  factory Preset.fromCategory(PackCategory category, {required String icon}) {
+    final copied = category.copy();
+    for (final item in copied.items) {
+      item.checked = false;
     }
     return Preset(
       id: newId(),
-      name: cat.name,
+      name: category.name,
       icon: icon,
       categories: [copied],
     );
@@ -159,11 +159,11 @@ class PackingList {
   final List<PackCategory> categories;
 
   int get totalItems =>
-      items.length + categories.fold(0, (sum, c) => sum + c.items.length);
+      items.length + categories.fold(0, (sum, category) => sum + category.items.length);
 
   int get packedItems =>
-      items.where((i) => i.checked).length +
-      categories.fold(0, (sum, c) => sum + c.items.where((i) => i.checked).length);
+      items.where((item) => item.checked).length +
+      categories.fold(0, (sum, category) => sum + category.items.where((item) => item.checked).length);
 
   bool get isReady => totalItems > 0 && packedItems == totalItems;
 

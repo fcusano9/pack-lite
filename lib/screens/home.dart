@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final store = context.watch<AppStore>();
 
     return Scaffold(
@@ -47,14 +47,14 @@ class HomeScreen extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
-                      color: h.ink,
+                      color: harbor.ink,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const SettingsScreen())),
-                    icon: Icon(Icons.settings_outlined, size: 22, color: h.mut),
+                    icon: Icon(Icons.settings_outlined, size: 22, color: harbor.mut),
                   ),
                 ],
               ),
@@ -69,7 +69,7 @@ class HomeScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _newList(context),
-        backgroundColor: h.accent,
+        backgroundColor: harbor.accent,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         child: const Icon(Icons.add_rounded, size: 28),
@@ -85,7 +85,7 @@ class _CardList extends StatelessWidget {
   final void Function(BuildContext, PackingList) onOpen;
 
   Future<bool> _confirmDelete(BuildContext context, PackingList list) async {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -98,7 +98,7 @@ class _CardList extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Delete', style: TextStyle(color: h.danger)),
+            child: Text('Delete', style: TextStyle(color: harbor.danger)),
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class _CardList extends StatelessWidget {
   }
 
   void _showCardMenu(BuildContext context, PackingList list) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -120,14 +120,14 @@ class _CardList extends StatelessWidget {
               height: 5,
               margin: const EdgeInsets.only(top: 8, bottom: 6),
               decoration: BoxDecoration(
-                color: h.line,
+                color: harbor.line,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
             ListTile(
-              leading: Icon(Icons.copy_rounded, size: 20, color: h.ink),
+              leading: Icon(Icons.copy_rounded, size: 20, color: harbor.ink),
               title: Text('Duplicate',
-                  style: TextStyle(fontSize: 14.5, color: h.ink)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 store.duplicateList(list.id);
@@ -135,9 +135,9 @@ class _CardList extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(Icons.delete_outline_rounded,
-                  size: 20, color: h.danger),
+                  size: 20, color: harbor.danger),
               title: Text('Delete',
-                  style: TextStyle(fontSize: 14.5, color: h.danger)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.danger)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
                 if (await _confirmDelete(context, list)) {
@@ -154,7 +154,7 @@ class _CardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
       buildDefaultDragHandles: false,
@@ -201,9 +201,9 @@ class _CardList extends StatelessWidget {
               key: ValueKey('dismiss-${list.id}'),
               direction: DismissDirection.horizontal,
               background: _SwipeBackground(
-                  alignment: Alignment.centerLeft, color: h.danger),
+                  alignment: Alignment.centerLeft, color: harbor.danger),
               secondaryBackground: _SwipeBackground(
-                  alignment: Alignment.centerRight, color: h.danger),
+                  alignment: Alignment.centerRight, color: harbor.danger),
               confirmDismiss: (_) => _confirmDelete(context, list),
               onDismissed: (_) => store.deleteList(list.id),
               child: ListCard(list: list, onTap: () => onOpen(context, list)),
@@ -247,7 +247,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -259,13 +259,13 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: h.ink,
+              color: harbor.ink,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             'Tap + to create your first packing list',
-            style: TextStyle(fontSize: 13.5, color: h.mut),
+            style: TextStyle(fontSize: 13.5, color: harbor.mut),
           ),
         ],
       ),

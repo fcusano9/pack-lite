@@ -11,7 +11,7 @@ class ListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final ready = list.isReady;
 
     final String countText;
@@ -25,7 +25,7 @@ class ListCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: h.card,
+        color: harbor.card,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -62,7 +62,7 @@ class ListCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w600,
-                                color: h.ink,
+                                color: harbor.ink,
                               ),
                             ),
                           ),
@@ -72,7 +72,7 @@ class ListCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: ready ? FontWeight.w700 : FontWeight.w500,
-                              color: ready ? h.good : h.mut,
+                              color: ready ? harbor.good : harbor.mut,
                             ),
                             child: Text(countText),
                           ),
@@ -108,13 +108,13 @@ class ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final radius = rounded ? BorderRadius.circular(2) : BorderRadius.zero;
     return ClipRRect(
       borderRadius: radius,
       child: Container(
         height: height,
-        color: h.line,
+        color: harbor.line,
         alignment: Alignment.centerLeft,
         child: AnimatedFractionallySizedBox(
           duration: const Duration(milliseconds: 250),
@@ -123,7 +123,7 @@ class ProgressBar extends StatelessWidget {
           widthFactor: progress.clamp(0.0, 1.0),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            color: ready ? h.good : h.accent,
+            color: ready ? harbor.good : harbor.accent,
           ),
         ),
       ),

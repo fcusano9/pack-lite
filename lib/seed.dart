@@ -4,7 +4,7 @@ import 'models.dart';
 /// progress states immediately. All of it is ordinary user data — rename,
 /// edit, or swipe away freely.
 List<PackingList> buildSeedLists() {
-  PackCategory cat(String name, String? icon, List<(String, bool)> items) =>
+  PackCategory category(String name, String? icon, List<(String, bool)> items) =>
       PackCategory(
         id: newId(),
         name: name,
@@ -21,7 +21,7 @@ List<PackingList> buildSeedLists() {
       name: 'Hawaii Vacation',
       icon: '🏖️',
       categories: [
-        cat('Clothes', null, [
+        category('Clothes', null, [
           ('T-shirts', false),
           ('Swimsuit', false),
           ('Shorts', false),
@@ -31,7 +31,7 @@ List<PackingList> buildSeedLists() {
           ('Sandals', true),
           ('Pajamas', true),
         ]),
-        cat('Toiletries', '🧴', [
+        category('Toiletries', '🧴', [
           ('Sunscreen', false),
           ('Toothbrush', false),
           ('Razor', false),
@@ -41,12 +41,12 @@ List<PackingList> buildSeedLists() {
           ('Shampoo bar', true),
           ('Floss', true),
         ]),
-        cat('Documents', null, [
+        category('Documents', null, [
           ('Passport', false),
           ('Boarding passes', true),
           ('Travel insurance', true),
         ]),
-        cat('Electronics', null, [
+        category('Electronics', null, [
           ('Phone charger', true),
           ('Power bank', true),
           ('Camera', true),
@@ -59,7 +59,7 @@ List<PackingList> buildSeedLists() {
       name: 'Ski Trip',
       icon: '🎿',
       categories: [
-        cat('Clothes', null, [
+        category('Clothes', null, [
           ('Ski jacket', false),
           ('Ski pants', false),
           ('Base layers', false),
@@ -69,13 +69,13 @@ List<PackingList> buildSeedLists() {
           ('Neck warmer', false),
           ('Wool socks', false),
         ]),
-        cat('Gear', null, [
+        category('Gear', null, [
           ('Skis', false),
           ('Poles', false),
           ('Ski boots', false),
           ('Ski pass', false),
         ]),
-        cat('Toiletries', '🧴', [
+        category('Toiletries', '🧴', [
           ('Lip balm', false),
           ('Sunscreen', false),
           ('Moisturizer', false),
@@ -87,20 +87,20 @@ List<PackingList> buildSeedLists() {
       name: 'Camping Weekend',
       icon: '🏕️',
       categories: [
-        cat('Shelter', null, [
+        category('Shelter', null, [
           ('Tent', true),
           ('Sleeping bag', true),
           ('Sleeping pad', true),
           ('Headlamp', true),
         ]),
-        cat('Kitchen', null, [
+        category('Kitchen', null, [
           ('Camp stove', true),
           ('Fuel', true),
           ('Lighter', true),
           ('Cook set', true),
           ('Cooler', true),
         ]),
-        cat('Clothes', null, [
+        category('Clothes', null, [
           ('Rain jacket', true),
           ('Fleece', true),
           ('Hiking boots', true),
@@ -112,14 +112,14 @@ List<PackingList> buildSeedLists() {
       name: 'Weekend in NYC',
       icon: '🎒',
       categories: [
-        cat('Essentials', null, [
+        category('Essentials', null, [
           ('Wallet', true),
           ('Keys', true),
           ('Phone charger', true),
           ('Umbrella', false),
           ('MetroCard', false),
         ]),
-        cat('Clothes', null, [
+        category('Clothes', null, [
           ('Jacket', false),
           ('Sneakers', false),
           ('Dress shirt', false),
@@ -133,12 +133,12 @@ List<PackingList> buildSeedLists() {
 /// Starter presets so the preset picker and Settings aren't empty on first
 /// run. Ordinary data — editable and deletable like anything else.
 List<Preset> buildSeedPresets() {
-  PackCategory cat(String name, String? icon, List<String> items) =>
+  PackCategory category(String name, String? icon, List<String> items) =>
       PackCategory(
         id: newId(),
         name: name,
         icon: icon,
-        items: [for (final n in items) Item(id: newId(), name: n)],
+        items: [for (final itemName in items) Item(id: newId(), name: itemName)],
       );
 
   return [
@@ -147,7 +147,7 @@ List<Preset> buildSeedPresets() {
       name: 'Toiletries',
       icon: '🧴',
       categories: [
-        cat('Toiletries', '🧴', [
+        category('Toiletries', '🧴', [
           'Toothbrush',
           'Toothpaste',
           'Deodorant',
@@ -165,7 +165,7 @@ List<Preset> buildSeedPresets() {
       name: 'Tech & Chargers',
       icon: '🔌',
       categories: [
-        cat('Electronics', '🔌', [
+        category('Electronics', '🔌', [
           'Phone charger',
           'Power bank',
           'Charging cables',
@@ -180,7 +180,7 @@ List<Preset> buildSeedPresets() {
       name: 'Beach Gear',
       icon: '🏖️',
       categories: [
-        cat('Beach', '⛱️', [
+        category('Beach', '⛱️', [
           'Swimsuit',
           'Beach towel',
           'Sunscreen',
