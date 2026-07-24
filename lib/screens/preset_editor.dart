@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -118,17 +120,20 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
         category?.items ?? _store.presetById(widget.presetId)?.items ?? const [];
     final index = bucket.indexWhere((bucketItem) => bucketItem.id == item.id);
     _store.presetDeleteItem(widget.presetId, category?.id, item.id);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(
-        content: const Text('Item deleted'),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () =>
-              _store.presetInsertItem(widget.presetId, category?.id, index, item),
-        ),
-      ));
+    final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
+    final snackBar = messenger.showSnackBar(SnackBar(
+      content: const Text('Item deleted'),
+      duration: const Duration(seconds: 4),
+      action: SnackBarAction(
+        label: 'Undo',
+        onPressed: () =>
+            _store.presetInsertItem(widget.presetId, category?.id, index, item),
+      ),
+    ));
+    // SnackBars with an action ignore `duration` in this Flutter version, so
+    // close it ourselves (cancelled if it's dismissed sooner).
+    final timer = Timer(const Duration(seconds: 4), snackBar.close);
+    snackBar.closed.then((_) => timer.cancel());
   }
 
   Future<bool> _confirm(String title, String message, String label) async {
