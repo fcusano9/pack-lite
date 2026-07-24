@@ -82,6 +82,8 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Start your list'), findsOneWidget);
     expect(find.text('Add item'), findsOneWidget);
+    // Item-first, but a New Category button is offered alongside.
+    expect(find.text('New Category'), findsOneWidget);
   });
 
   testWidgets('preset with loose items renders in the editor', (tester) async {

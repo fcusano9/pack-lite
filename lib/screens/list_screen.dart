@@ -344,7 +344,7 @@ class _ListScreenState extends State<ListScreen> {
 
     // Packed section: loose packed first (no label), then labeled categories.
     final packedCount = list.packedItems;
-    if (packedCount > 0 && !list.hidePacked) {
+    if (packedCount > 0) {
       rows.add(_PackedHeaderRow(packedCount));
       if (!_packedCollapsed) {
         final loosePacked = list.items.where((item) => item.checked).toList();
@@ -438,8 +438,6 @@ class _ListScreenState extends State<ListScreen> {
                   showCategorySheet(context, listId: widget.listId),
               onAddPreset: _addPreset,
               onUncheckAll: () => _uncheckAll(list),
-              onTogglePacked: () =>
-                  _store.setHidePacked(widget.listId, !list.hidePacked),
               onCollapseAll: () => setState(() =>
                   _collapsed.addAll(list.categories.map((category) => category.id))),
               onExpandAll: () => setState(_collapsed.clear),
@@ -456,7 +454,11 @@ class _ListScreenState extends State<ListScreen> {
               child: (list.items.isEmpty &&
                       list.categories.isEmpty &&
                       !_adding)
-                  ? _EmptyList(onAddItem: () => _openAdd(null))
+                  ? _EmptyList(
+                      onAddItem: () => _openAdd(null),
+                      onNewCategory: () =>
+                          showCategorySheet(context, listId: widget.listId),
+                    )
                   : ReorderableListView.builder(
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
                       buildDefaultDragHandles: false,
@@ -858,7 +860,6 @@ class _Header extends StatelessWidget {
     required this.onNewCategory,
     required this.onAddPreset,
     required this.onUncheckAll,
-    required this.onTogglePacked,
     required this.onCollapseAll,
     required this.onExpandAll,
     required this.onSavePreset,
@@ -870,7 +871,6 @@ class _Header extends StatelessWidget {
   final VoidCallback onNewCategory;
   final VoidCallback onAddPreset;
   final VoidCallback onUncheckAll;
-  final VoidCallback onTogglePacked;
   final VoidCallback onCollapseAll;
   final VoidCallback onExpandAll;
   final VoidCallback onSavePreset;
@@ -957,8 +957,6 @@ class _Header extends StatelessWidget {
               'uncheck' => onUncheckAll(),
               'collapse' => onCollapseAll(),
               'expand' => onExpandAll(),
-              'packed' => onTogglePacked(),
-              'edit' => onEdit(),
               'preset' => onSavePreset(),
               'delete' => onDelete(),
               _ => (),
@@ -974,14 +972,6 @@ class _Header extends StatelessWidget {
               PopupMenuItem(
                   value: 'expand',
                   child: Text('Expand All', style: menuStyle)),
-              PopupMenuItem(
-                  value: 'packed',
-                  child: Text(
-                      list.hidePacked ? 'Show Packed Items' : 'Hide Packed Items',
-                      style: menuStyle)),
-              PopupMenuItem(
-                  value: 'edit',
-                  child: Text('Edit Name & Icon', style: menuStyle)),
               PopupMenuItem(
                   value: 'preset',
                   child: Text('Save as Preset', style: menuStyle)),
@@ -1025,9 +1015,10 @@ class _Checkbox extends StatelessWidget {
 }
 
 class _EmptyList extends StatelessWidget {
-  const _EmptyList({required this.onAddItem});
+  const _EmptyList({required this.onAddItem, required this.onNewCategory});
 
   final VoidCallback onAddItem;
+  final VoidCallback onNewCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -1051,33 +1042,39 @@ class _EmptyList extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5),
             ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onAddItem,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Add item'),
-              style: FilledButton.styleFrom(
-                backgroundColor: harbor.accent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11)),
-                textStyle:
-                    const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text.rich(
-              TextSpan(
-                text: 'Want structure? The ',
-                children: const [
-                  TextSpan(
-                      text: '+',
-                      style: TextStyle(fontWeight: FontWeight.w800)),
-                  TextSpan(text: ' up top adds a category or preset.'),
-                ],
-              ),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11.5, color: harbor.mut),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: onAddItem,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Add item'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: harbor.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11)),
+                    textStyle: const TextStyle(
+                        fontSize: 13.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onNewCategory,
+                  icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+                  label: const Text('New Category'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: harbor.accent,
+                    side: BorderSide(color: harbor.line),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11)),
+                    textStyle: const TextStyle(
+                        fontSize: 13.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
