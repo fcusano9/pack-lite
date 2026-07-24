@@ -14,7 +14,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final store = context.watch<AppStore>();
 
     return Scaffold(
@@ -29,13 +29,13 @@ class SettingsScreen extends StatelessWidget {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 18, color: h.accent),
+                        size: 18, color: harbor.accent),
                   ),
                   Text('Settings',
                       style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: h.ink)),
+                          color: harbor.ink)),
                 ],
               ),
             ),
@@ -43,55 +43,55 @@ class SettingsScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  _label(h, 'APPEARANCE'),
+                  _label(harbor, 'APPEARANCE'),
                   _seg(context, ['Light', 'Dark', 'System'], switch (store.themeMode) {
                     ThemeMode.light => 0,
                     ThemeMode.dark => 1,
                     ThemeMode.system => 2,
-                  }, (i) {
-                    store.setThemeMode(switch (i) {
+                  }, (index) {
+                    store.setThemeMode(switch (index) {
                       0 => ThemeMode.light,
                       1 => ThemeMode.dark,
                       _ => ThemeMode.system,
                     });
                   }),
-                  _label(h, 'VIBRATION'),
+                  _label(harbor, 'VIBRATION'),
                   _seg(context, ['Off', 'Light', 'Medium', 'Strong'],
-                      store.vibration.index, (i) {
-                    store.setVibration(VibLevel.values[i]);
+                      store.vibration.index, (index) {
+                    store.setVibration(VibrationLevel.values[index]);
                     Haptics.tap();
-                    Sfx.pop();
+                    SoundEffects.pop();
                   }),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                     child: Text(
                       'Works independently of your phone\'s touch-vibration '
                       'setting.',
-                      style: TextStyle(fontSize: 12, color: h.mut, height: 1.4),
+                      style: TextStyle(fontSize: 12, color: harbor.mut, height: 1.4),
                     ),
                   ),
-                  _label(h, 'GENERAL'),
-                  _card(h, [
+                  _label(harbor, 'GENERAL'),
+                  _card(harbor, [
                     _row(context,
                         label: 'List Presets',
                         trailing: '${store.presets.length}',
                         onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (_) => const PresetsScreen()))),
-                    _divider(h),
+                    _divider(harbor),
                     _row(context,
                         label: 'Language', trailing: 'English', enabled: false),
                   ]),
-                  _label(h, 'DATA'),
-                  _card(h, [
+                  _label(harbor, 'DATA'),
+                  _card(harbor, [
                     _row(context,
                         label: 'Export Data',
                         onTap: () => _export(context)),
-                    _divider(h),
+                    _divider(harbor),
                     _row(context,
                         label: 'Import Data',
                         onTap: () => _import(context)),
-                    _divider(h),
+                    _divider(harbor),
                     _row(context,
                         label: 'Delete All Data',
                         danger: true,
@@ -103,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
                       'Pack Lite ${AppInfo.version}'.trim(),
                       style: TextStyle(
                           fontSize: 11.5,
-                          color: h.mut.withValues(alpha: 0.75)),
+                          color: harbor.mut.withValues(alpha: 0.75)),
                     ),
                   ),
                 ],
@@ -147,7 +147,7 @@ class SettingsScreen extends StatelessWidget {
     final mode = await showDialog<String>(
       context: context,
       builder: (context) {
-        final h = context.harbor;
+        final harbor = context.harbor;
         return AlertDialog(
           title: const Text('Import backup'),
           content: Text(
@@ -160,10 +160,10 @@ class SettingsScreen extends StatelessWidget {
                 child: const Text('Cancel')),
             TextButton(
                 onPressed: () => Navigator.of(context).pop('merge'),
-                child: Text('Add', style: TextStyle(color: h.accent))),
+                child: Text('Add', style: TextStyle(color: harbor.accent))),
             TextButton(
                 onPressed: () => Navigator.of(context).pop('replace'),
-                child: Text('Replace', style: TextStyle(color: h.danger))),
+                child: Text('Replace', style: TextStyle(color: harbor.danger))),
           ],
         );
       },
@@ -182,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _deleteAll(BuildContext context) async {
     final store = context.read<AppStore>();
-    final h = context.harbor;
+    final harbor = context.harbor;
     // First confirmation.
     final first = await showDialog<bool>(
       context: context,
@@ -197,20 +197,20 @@ class SettingsScreen extends StatelessWidget {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Continue', style: TextStyle(color: h.danger))),
+              child: Text('Continue', style: TextStyle(color: harbor.danger))),
         ],
       ),
     );
     if (first != true || !context.mounted) return;
     // Second, type-to-confirm.
-    final ctrl = TextEditingController();
+    final controller = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Type DELETE to confirm'),
           content: TextField(
-            controller: ctrl,
+            controller: controller,
             autofocus: true,
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(isDense: true, hintText: 'DELETE'),
@@ -220,14 +220,14 @@ class SettingsScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(false),
                 child: const Text('Cancel')),
             TextButton(
-                onPressed: ctrl.text.trim().toUpperCase() == 'DELETE'
+                onPressed: controller.text.trim().toUpperCase() == 'DELETE'
                     ? () => Navigator.of(context).pop(true)
                     : null,
                 child: Text('Delete Everything',
                     style: TextStyle(
-                        color: ctrl.text.trim().toUpperCase() == 'DELETE'
-                            ? h.danger
-                            : h.mut))),
+                        color: controller.text.trim().toUpperCase() == 'DELETE'
+                            ? harbor.danger
+                            : harbor.mut))),
           ],
         ),
       ),
@@ -238,34 +238,34 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _toast(BuildContext context, String msg) {
+  void _toast(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   // ---- small UI helpers ----
 
-  Widget _label(Harbor h, String text) => Padding(
+  Widget _label(Harbor harbor, String text) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
         child: Text(text,
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.1,
-                color: h.mut)),
+                color: harbor.mut)),
       );
 
-  Widget _card(Harbor h, List<Widget> children) => Container(
+  Widget _card(Harbor harbor, List<Widget> children) => Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-            color: h.card, borderRadius: BorderRadius.circular(12)),
+            color: harbor.card, borderRadius: BorderRadius.circular(12)),
         clipBehavior: Clip.antiAlias,
         child: Column(children: children),
       );
 
-  Widget _divider(Harbor h) =>
-      Divider(height: 1, thickness: 1, color: h.line, indent: 14);
+  Widget _divider(Harbor harbor) =>
+      Divider(height: 1, thickness: 1, color: harbor.line, indent: 14);
 
   Widget _row(BuildContext context,
       {required String label,
@@ -273,7 +273,7 @@ class SettingsScreen extends StatelessWidget {
       bool danger = false,
       bool enabled = true,
       VoidCallback? onTap}) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -286,15 +286,15 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: danger ? FontWeight.w600 : FontWeight.w400,
-                      color: danger ? h.danger : h.ink)),
+                      color: danger ? harbor.danger : harbor.ink)),
               const Spacer(),
               if (trailing != null)
-                Text(trailing, style: TextStyle(fontSize: 13.5, color: h.mut)),
+                Text(trailing, style: TextStyle(fontSize: 13.5, color: harbor.mut)),
               if (onTap != null && !danger)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: Icon(Icons.chevron_right_rounded,
-                      size: 20, color: h.mut),
+                      size: 20, color: harbor.mut),
                 ),
             ],
           ),
@@ -305,32 +305,32 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _seg(BuildContext context, List<String> labels, int selected,
       ValueChanged<int> onSelect) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration:
-            BoxDecoration(color: h.card, borderRadius: BorderRadius.circular(10)),
+            BoxDecoration(color: harbor.card, borderRadius: BorderRadius.circular(10)),
         child: Row(
           children: [
-            for (var i = 0; i < labels.length; i++)
+            for (var index = 0; index < labels.length; index++)
               Expanded(
                 child: GestureDetector(
-                  onTap: () => onSelect(i),
+                  onTap: () => onSelect(index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color: selected == i ? h.accent : Colors.transparent,
+                      color: selected == index ? harbor.accent : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: Text(labels[i],
+                      child: Text(labels[index],
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: selected == i ? Colors.white : h.mut)),
+                              color: selected == index ? Colors.white : harbor.mut)),
                     ),
                   ),
                 ),

@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 
 /// Vibration strength chosen in Settings.
-enum VibLevel { off, light, medium, strong }
+enum VibrationLevel { off, light, medium, strong }
 
 /// App haptics, driven through the device vibrator directly so they work
 /// regardless of Android's "touch vibration" system setting (Flutter's
 /// HapticFeedback respects that setting, which is why taps felt dead when
 /// it was off). Amplitude control lets Settings offer real strength levels.
 class Haptics {
-  static VibLevel level = VibLevel.medium;
+  static VibrationLevel level = VibrationLevel.medium;
 
   static bool _useVibrator = false;
   static bool _hasAmplitude = false;
@@ -26,15 +26,15 @@ class Haptics {
   }
 
   static (int, int) _params() => switch (level) {
-        VibLevel.off => (0, 0),
-        VibLevel.light => (16, 80),
-        VibLevel.medium => (24, 170),
-        VibLevel.strong => (34, 255),
+        VibrationLevel.off => (0, 0),
+        VibrationLevel.light => (16, 80),
+        VibrationLevel.medium => (24, 170),
+        VibrationLevel.strong => (34, 255),
       };
 
   /// The check-off / drag-lift tick.
   static void tap() {
-    if (level == VibLevel.off) return;
+    if (level == VibrationLevel.off) return;
     final (duration, amplitude) = _params();
     if (_useVibrator) {
       try {
@@ -45,9 +45,9 @@ class Haptics {
     }
     // Fallback (iOS, web, or no vibrator API): system haptics.
     switch (level) {
-      case VibLevel.light:
+      case VibrationLevel.light:
         HapticFeedback.lightImpact();
-      case VibLevel.strong:
+      case VibrationLevel.strong:
         HapticFeedback.heavyImpact();
       default:
         HapticFeedback.mediumImpact();
@@ -56,7 +56,7 @@ class Haptics {
 
   /// The double-pulse for the "all packed" celebration.
   static void celebrate() {
-    if (level == VibLevel.off) return;
+    if (level == VibrationLevel.off) return;
     final (duration, amplitude) = _params();
     if (_useVibrator) {
       try {

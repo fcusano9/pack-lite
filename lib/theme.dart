@@ -81,19 +81,19 @@ class Harbor extends ThemeExtension<Harbor> {
   }
 
   @override
-  Harbor lerp(ThemeExtension<Harbor>? other, double t) {
+  Harbor lerp(ThemeExtension<Harbor>? other, double progress) {
     if (other is! Harbor) return this;
     return Harbor(
-      bg: Color.lerp(bg, other.bg, t)!,
-      card: Color.lerp(card, other.card, t)!,
-      ink: Color.lerp(ink, other.ink, t)!,
-      mut: Color.lerp(mut, other.mut, t)!,
-      line: Color.lerp(line, other.line, t)!,
-      accent: Color.lerp(accent, other.accent, t)!,
-      accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
-      tile: Color.lerp(tile, other.tile, t)!,
-      good: Color.lerp(good, other.good, t)!,
-      danger: Color.lerp(danger, other.danger, t)!,
+      bg: Color.lerp(bg, other.bg, progress)!,
+      card: Color.lerp(card, other.card, progress)!,
+      ink: Color.lerp(ink, other.ink, progress)!,
+      mut: Color.lerp(mut, other.mut, progress)!,
+      line: Color.lerp(line, other.line, progress)!,
+      accent: Color.lerp(accent, other.accent, progress)!,
+      accentSoft: Color.lerp(accentSoft, other.accentSoft, progress)!,
+      tile: Color.lerp(tile, other.tile, progress)!,
+      good: Color.lerp(good, other.good, progress)!,
+      danger: Color.lerp(danger, other.danger, progress)!,
     );
   }
 }
@@ -102,35 +102,35 @@ extension HarborContext on BuildContext {
   Harbor get harbor => Theme.of(this).extension<Harbor>()!;
 }
 
-ThemeData harborTheme(Harbor h, Brightness brightness) {
+ThemeData harborTheme(Harbor harbor, Brightness brightness) {
   final base = ThemeData(brightness: brightness, useMaterial3: true);
   return base.copyWith(
-    scaffoldBackgroundColor: h.bg,
+    scaffoldBackgroundColor: harbor.bg,
     colorScheme: base.colorScheme.copyWith(
-      primary: h.accent,
+      primary: harbor.accent,
       onPrimary: Colors.white,
-      surface: h.card,
-      onSurface: h.ink,
-      error: h.danger,
+      surface: harbor.card,
+      onSurface: harbor.ink,
+      error: harbor.danger,
     ),
-    extensions: [h],
-    textTheme: base.textTheme.apply(bodyColor: h.ink, displayColor: h.ink),
-    splashColor: h.accent.withValues(alpha: 0.08),
-    highlightColor: h.accent.withValues(alpha: 0.05),
-    dividerColor: h.line,
+    extensions: [harbor],
+    textTheme: base.textTheme.apply(bodyColor: harbor.ink, displayColor: harbor.ink),
+    splashColor: harbor.accent.withValues(alpha: 0.08),
+    highlightColor: harbor.accent.withValues(alpha: 0.05),
+    dividerColor: harbor.line,
     textSelectionTheme: TextSelectionThemeData(
-      cursorColor: h.accent,
-      selectionColor: h.accent.withValues(alpha: 0.25),
-      selectionHandleColor: h.accent,
+      cursorColor: harbor.accent,
+      selectionColor: harbor.accent.withValues(alpha: 0.25),
+      selectionHandleColor: harbor.accent,
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: h.card,
+      backgroundColor: harbor.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: h.ink),
-      contentTextStyle: TextStyle(fontSize: 14, color: h.mut, height: 1.45),
+      titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: harbor.ink),
+      contentTextStyle: TextStyle(fontSize: 14, color: harbor.mut, height: 1.45),
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: h.card,
+      backgroundColor: harbor.card,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),

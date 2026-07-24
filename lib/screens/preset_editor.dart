@@ -25,48 +25,48 @@ sealed class _Row {
 }
 
 class _HeaderRow extends _Row {
-  _HeaderRow(this.cat) : super('h-${cat.id}');
-  final PackCategory cat;
+  _HeaderRow(this.category) : super('header-${category.id}');
+  final PackCategory category;
 }
 
 class _ItemRow extends _Row {
-  _ItemRow(this.cat, this.item, {this.firstInCard = false})
-      : super('i-${item.id}');
-  final PackCategory? cat; // null = loose
+  _ItemRow(this.category, this.item, {this.firstInCard = false})
+      : super('item-${item.id}');
+  final PackCategory? category; // null = loose
   final Item item;
   final bool firstInCard;
 }
 
 class _AddRow extends _Row {
-  _AddRow(this.cat, {this.roundTop = false}) : super('a-${cat?.id ?? 'loose'}');
-  final PackCategory? cat; // null = loose
+  _AddRow(this.category, {this.roundTop = false}) : super('a-${category?.id ?? 'loose'}');
+  final PackCategory? category; // null = loose
   final bool roundTop;
 }
 
 class _PresetEditorScreenState extends State<PresetEditorScreen> {
   final Set<String> _collapsed = {};
   bool _adding = false;
-  String? _addCatId; // null = loose section
-  final TextEditingController _addCtrl = TextEditingController();
+  String? _addCategoryId; // null = loose section
+  final TextEditingController _addController = TextEditingController();
   final FocusNode _addFocus = FocusNode();
 
   AppStore get _store => context.read<AppStore>();
 
   @override
   void dispose() {
-    _addCtrl.dispose();
+    _addController.dispose();
     _addFocus.dispose();
     super.dispose();
   }
 
   void _commitAdd({required bool keepOpen}) {
     if (!_adding) return;
-    final text = _addCtrl.text.trim();
+    final text = _addController.text.trim();
     if (text.isNotEmpty) {
-      _store.presetAddItem(widget.presetId, _addCatId, text);
+      _store.presetAddItem(widget.presetId, _addCategoryId, text);
       Haptics.tap();
     }
-    _addCtrl.clear();
+    _addController.clear();
     if (keepOpen && text.isNotEmpty) {
       _addFocus.requestFocus();
     } else {
@@ -74,28 +74,28 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     }
   }
 
-  /// Opens the inline add row for [cat] (null = loose section).
-  void _openAdd(PackCategory? cat) {
+  /// Opens the inline add row for [category] (null = loose section).
+  void _openAdd(PackCategory? category) {
     _commitAdd(keepOpen: false);
     setState(() {
       _adding = true;
-      _addCatId = cat?.id;
+      _addCategoryId = category?.id;
     });
-    _addCtrl.clear();
+    _addController.clear();
   }
 
-  Future<void> _renameItem(PackCategory? cat, Item item) async {
-    final h = context.harbor;
-    final ctrl = TextEditingController(text: item.name);
+  Future<void> _renameItem(PackCategory? category, Item item) async {
+    final harbor = context.harbor;
+    final controller = TextEditingController(text: item.name);
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Rename item'),
         content: TextField(
-          controller: ctrl,
+          controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
+          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
           decoration: const InputDecoration(isDense: true),
         ),
         actions: [
@@ -103,21 +103,21 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
-              child: Text('Save', style: TextStyle(color: h.accent))),
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              child: Text('Save', style: TextStyle(color: harbor.accent))),
         ],
       ),
     );
     if (name != null && name.isNotEmpty && name != item.name) {
-      _store.presetRenameItem(widget.presetId, cat?.id, item.id, name);
+      _store.presetRenameItem(widget.presetId, category?.id, item.id, name);
     }
   }
 
-  void _deleteItem(PackCategory? cat, Item item) {
+  void _deleteItem(PackCategory? category, Item item) {
     final bucket =
-        cat?.items ?? _store.presetById(widget.presetId)?.items ?? const [];
-    final idx = bucket.indexWhere((i) => i.id == item.id);
-    _store.presetDeleteItem(widget.presetId, cat?.id, item.id);
+        category?.items ?? _store.presetById(widget.presetId)?.items ?? const [];
+    final index = bucket.indexWhere((bucketItem) => bucketItem.id == item.id);
+    _store.presetDeleteItem(widget.presetId, category?.id, item.id);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
@@ -126,14 +126,14 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () =>
-              _store.presetInsertItem(widget.presetId, cat?.id, idx, item),
+              _store.presetInsertItem(widget.presetId, category?.id, index, item),
         ),
       ));
   }
 
   Future<bool> _confirm(String title, String message, String label) async {
-    final h = context.harbor;
-    final r = await showDialog<bool>(
+    final harbor = context.harbor;
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
@@ -144,15 +144,15 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(label, style: TextStyle(color: h.danger))),
+              child: Text(label, style: TextStyle(color: harbor.danger))),
         ],
       ),
     );
-    return r ?? false;
+    return result ?? false;
   }
 
-  void _categoryMenu(PackCategory cat) {
-    final h = context.harbor;
+  void _categoryMenu(PackCategory category) {
+    final harbor = context.harbor;
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -165,33 +165,33 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               height: 5,
               margin: const EdgeInsets.only(top: 8, bottom: 6),
               decoration: BoxDecoration(
-                  color: h.line, borderRadius: BorderRadius.circular(3)),
+                  color: harbor.line, borderRadius: BorderRadius.circular(3)),
             ),
             ListTile(
-              leading: Icon(Icons.edit_outlined, size: 20, color: h.ink),
+              leading: Icon(Icons.edit_outlined, size: 20, color: harbor.ink),
               title: Text('Rename & icon',
-                  style: TextStyle(fontSize: 14.5, color: h.ink)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 showCategorySheet(context,
-                    presetId: widget.presetId, edit: cat);
+                    presetId: widget.presetId, edit: category);
               },
             ),
             ListTile(
               leading: Icon(Icons.delete_outline_rounded,
-                  size: 20, color: h.danger),
+                  size: 20, color: harbor.danger),
               title: Text('Delete category',
-                  style: TextStyle(fontSize: 14.5, color: h.danger)),
+                  style: TextStyle(fontSize: 14.5, color: harbor.danger)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
-                final n = cat.items.length;
+                final itemCount = category.items.length;
                 if (await _confirm(
-                    'Delete "${cat.name}"?',
-                    n == 0
+                    'Delete "${category.name}"?',
+                    itemCount == 0
                         ? 'This category is empty.'
-                        : 'Its $n item${n == 1 ? '' : 's'} will be deleted too.',
+                        : 'Its $itemCount item${itemCount == 1 ? '' : 's'} will be deleted too.',
                     'Delete')) {
-                  _store.presetDeleteCategory(widget.presetId, cat.id);
+                  _store.presetDeleteCategory(widget.presetId, category.id);
                 }
               },
             ),
@@ -206,18 +206,18 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     final rows = <_Row>[];
     // Loose section at top: shown when there are loose items or no categories.
     if (preset.items.isNotEmpty || preset.categories.isEmpty) {
-      for (var k = 0; k < preset.items.length; k++) {
-        rows.add(_ItemRow(null, preset.items[k], firstInCard: k == 0));
+      for (var index = 0; index < preset.items.length; index++) {
+        rows.add(_ItemRow(null, preset.items[index], firstInCard: index == 0));
       }
       rows.add(_AddRow(null, roundTop: preset.items.isEmpty));
     }
-    for (final cat in preset.categories) {
-      rows.add(_HeaderRow(cat));
-      if (!_collapsed.contains(cat.id)) {
-        for (final item in cat.items) {
-          rows.add(_ItemRow(cat, item));
+    for (final category in preset.categories) {
+      rows.add(_HeaderRow(category));
+      if (!_collapsed.contains(category.id)) {
+        for (final item in category.items) {
+          rows.add(_ItemRow(category, item));
         }
-        rows.add(_AddRow(cat));
+        rows.add(_AddRow(category));
       }
     }
     return rows;
@@ -228,28 +228,28 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     if (dragged is! _ItemRow) return;
     final remaining = [...rows]..removeAt(oldIndex);
     PackCategory? target; // null = loose
-    var pos = 0;
-    for (var k = 0; k < newIndex && k < remaining.length; k++) {
-      final row = remaining[k];
+    var position = 0;
+    for (var index = 0; index < newIndex && index < remaining.length; index++) {
+      final row = remaining[index];
       if (row is _HeaderRow) {
-        target = row.cat;
-        pos = 0;
-      } else if (row is _ItemRow && row.cat?.id == target?.id) {
-        pos++;
+        target = row.category;
+        position = 0;
+      } else if (row is _ItemRow && row.category?.id == target?.id) {
+        position++;
       }
     }
     final preset = _store.presetById(widget.presetId);
     final bucket = target?.items ?? preset?.items ?? const [];
-    final items = bucket.where((i) => i.id != dragged.item.id).toList();
-    final insertAt = pos.clamp(0, items.length);
-    _store.presetDeleteItem(widget.presetId, dragged.cat?.id, dragged.item.id);
+    final items = bucket.where((item) => item.id != dragged.item.id).toList();
+    final insertAt = position.clamp(0, items.length);
+    _store.presetDeleteItem(widget.presetId, dragged.category?.id, dragged.item.id);
     _store.presetInsertItem(
         widget.presetId, target?.id, insertAt, dragged.item.copy());
   }
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final store = context.watch<AppStore>();
     final preset = store.presetById(widget.presetId);
     if (preset == null) return const Scaffold(body: SizedBox.shrink());
@@ -266,7 +266,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 18, color: h.accent),
+                        size: 18, color: harbor.accent),
                   ),
                   Expanded(
                     child: GestureDetector(
@@ -284,7 +284,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                                 style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: h.ink)),
+                                    color: harbor.ink)),
                           ),
                         ],
                       ),
@@ -293,24 +293,26 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                   IconButton(
                     onPressed: () =>
                         showCategorySheet(context, presetId: widget.presetId),
-                    icon: Icon(Icons.add_rounded, size: 24, color: h.accent),
+                    icon: Icon(Icons.add_rounded, size: 24, color: harbor.accent),
                   ),
                 ],
               ),
             ),
-            Container(height: 1, color: h.line),
+            Container(height: 1, color: harbor.line),
             Expanded(
               child: (preset.items.isEmpty &&
                       preset.categories.isEmpty &&
                       !_adding)
-                  ? _empty(h)
+                  ? _empty(harbor)
                   : ReorderableListView.builder(
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
                       buildDefaultDragHandles: false,
                       itemCount: rows.length,
                       onReorderStart: (_) => Haptics.tap(),
-                      onReorderItem: (o, n) => _onReorder(rows, o, n),
-                      itemBuilder: (context, i) => _buildRow(preset, rows, i),
+                      onReorderItem: (oldIndex, newIndex) =>
+                          _onReorder(rows, oldIndex, newIndex),
+                      itemBuilder: (context, index) =>
+                          _buildRow(preset, rows, index),
                     ),
             ),
           ],
@@ -327,25 +329,25 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
   }
 
   Widget _buildRow(Preset preset, List<_Row> rows, int index) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final row = rows[index];
     switch (row) {
-      case _HeaderRow(:final cat):
-        final collapsed = _collapsed.contains(cat.id);
+      case _HeaderRow(:final category):
+        final collapsed = _collapsed.contains(category.id);
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           decoration: BoxDecoration(
-            color: h.card,
+            color: harbor.card,
             borderRadius: collapsed
                 ? BorderRadius.circular(12)
                 : const BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: InkWell(
             onTap: () => setState(() => collapsed
-                ? _collapsed.remove(cat.id)
-                : _collapsed.add(cat.id)),
-            onLongPress: () => _categoryMenu(cat),
+                ? _collapsed.remove(category.id)
+                : _collapsed.add(category.id)),
+            onLongPress: () => _categoryMenu(category),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 7),
               child: Row(
@@ -353,26 +355,26 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                   Expanded(
                     child: Row(
                       children: [
-                        if (cat.icon != null) ...[
-                          Text(cat.icon!, style: const TextStyle(fontSize: 13)),
+                        if (category.icon != null) ...[
+                          Text(category.icon!, style: const TextStyle(fontSize: 13)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
-                          child: Text(cat.name.toUpperCase(),
+                          child: Text(category.name.toUpperCase(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.7,
-                                  color: h.mut)),
+                                  color: harbor.mut)),
                         ),
                         const SizedBox(width: 6),
-                        Text('· ${cat.items.length}',
+                        Text('· ${category.items.length}',
                             style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: h.mut)),
+                                color: harbor.mut)),
                       ],
                     ),
                   ),
@@ -380,7 +382,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                     turns: collapsed ? -0.25 : 0,
                     duration: const Duration(milliseconds: 180),
                     child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 17, color: h.mut),
+                        size: 17, color: harbor.mut),
                   ),
                 ],
               ),
@@ -388,13 +390,13 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
           ),
         );
 
-      case _ItemRow(:final cat, :final item, :final firstInCard):
+      case _ItemRow(:final category, :final item, :final firstInCard):
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
           decoration: BoxDecoration(
-            color: h.card,
+            color: harbor.card,
             borderRadius: firstInCard
                 ? const BorderRadius.vertical(top: Radius.circular(12))
                 : null,
@@ -404,7 +406,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
             child: Dismissible(
               key: ValueKey('dis-${row.key}'),
               background: Container(
-                color: h.accent,
+                color: harbor.accent,
                 alignment: Alignment.centerLeft,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: const Text('Rename',
@@ -414,7 +416,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                         fontWeight: FontWeight.w700)),
               ),
               secondaryBackground: Container(
-                color: h.danger,
+                color: harbor.danger,
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: const Text('Delete',
@@ -425,17 +427,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               ),
               confirmDismiss: (direction) async {
                 if (direction == DismissDirection.startToEnd) {
-                  _renameItem(cat, item);
+                  _renameItem(category, item);
                   return false;
                 }
                 return true;
               },
-              onDismissed: (_) => _deleteItem(cat, item),
+              onDismissed: (_) => _deleteItem(category, item),
               child: Container(
                 decoration: firstInCard
                     ? null
                     : BoxDecoration(
-                        border: Border(top: BorderSide(color: h.line))),
+                        border: Border(top: BorderSide(color: harbor.line))),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
                 child: Row(
@@ -445,13 +447,13 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                       height: 5,
                       margin: const EdgeInsets.only(left: 8, right: 16),
                       decoration:
-                          BoxDecoration(color: h.mut, shape: BoxShape.circle),
+                          BoxDecoration(color: harbor.mut, shape: BoxShape.circle),
                     ),
                     Expanded(
                       child: Text(item.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 15, color: h.ink)),
+                          style: TextStyle(fontSize: 15, color: harbor.ink)),
                     ),
                   ],
                 ),
@@ -460,8 +462,8 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
           ),
         );
 
-      case _AddRow(:final cat, :final roundTop):
-        final active = _adding && _addCatId == cat?.id;
+      case _AddRow(:final category, :final roundTop):
+        final active = _adding && _addCategoryId == category?.id;
         final radius = roundTop
             ? BorderRadius.circular(12)
             : const BorderRadius.vertical(bottom: Radius.circular(12));
@@ -469,17 +471,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: active ? h.accentSoft : h.card,
+            color: active ? harbor.accentSoft : harbor.card,
             borderRadius: radius,
           ),
           child: InkWell(
-            onTap: active ? null : () => _openAdd(cat),
+            onTap: active ? null : () => _openAdd(category),
             borderRadius: radius,
             child: Container(
               decoration: roundTop
                   ? null
                   : BoxDecoration(
-                      border: Border(top: BorderSide(color: h.line))),
+                      border: Border(top: BorderSide(color: harbor.line))),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(
@@ -487,17 +489,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                         const SizedBox(width: 29),
                         Expanded(
                           child: TextField(
-                            controller: _addCtrl,
+                            controller: _addController,
                             focusNode: _addFocus,
                             autofocus: true,
                             textCapitalization: TextCapitalization.sentences,
                             onSubmitted: (_) => _commitAdd(keepOpen: true),
                             onTapOutside: (_) => _commitAdd(keepOpen: false),
-                            style: TextStyle(fontSize: 15, color: h.ink),
+                            style: TextStyle(fontSize: 15, color: harbor.ink),
                             decoration: InputDecoration(
                               isDense: true,
                               hintText: 'Item name',
-                              hintStyle: TextStyle(color: h.mut),
+                              hintStyle: TextStyle(color: harbor.mut),
                               border: InputBorder.none,
                             ),
                           ),
@@ -509,10 +511,10 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                         SizedBox(
                             width: 24,
                             child:
-                                Icon(Icons.add_rounded, size: 17, color: h.mut)),
+                                Icon(Icons.add_rounded, size: 17, color: harbor.mut)),
                         const SizedBox(width: 11),
                         Text('Add item',
-                            style: TextStyle(fontSize: 14, color: h.mut)),
+                            style: TextStyle(fontSize: 14, color: harbor.mut)),
                       ],
                     ),
             ),
@@ -521,7 +523,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     }
   }
 
-  Widget _empty(Harbor h) {
+  Widget _empty(Harbor harbor) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 44),
@@ -532,18 +534,18 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
             const SizedBox(height: 14),
             Text('Empty preset',
                 style: TextStyle(
-                    fontSize: 15.5, fontWeight: FontWeight.w700, color: h.ink)),
+                    fontSize: 15.5, fontWeight: FontWeight.w700, color: harbor.ink)),
             const SizedBox(height: 6),
             Text('Add items directly, or use + to add a category.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: h.mut, height: 1.5)),
+                style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5)),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => _openAdd(null),
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Add item'),
               style: FilledButton.styleFrom(
-                backgroundColor: h.accent,
+                backgroundColor: harbor.accent,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(11)),

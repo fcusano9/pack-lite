@@ -26,7 +26,7 @@ class PresetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
+    final harbor = context.harbor;
     final store = context.watch<AppStore>();
     final presets = store.presets;
 
@@ -41,38 +41,39 @@ class PresetsScreen extends StatelessWidget {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 18, color: h.accent),
+                        size: 18, color: harbor.accent),
                   ),
                   Text('List Presets',
                       style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: h.ink)),
+                          color: harbor.ink)),
                 ],
               ),
             ),
             Expanded(
               child: presets.isEmpty
-                  ? _empty(h)
+                  ? _empty(harbor)
                   : ReorderableListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
                       buildDefaultDragHandles: false,
                       itemCount: presets.length,
                       onReorderStart: (_) => Haptics.tap(),
-                      onReorderItem: (o, n) => store.reorderPresets(o, n),
-                      itemBuilder: (context, i) {
-                        final preset = presets[i];
+                      onReorderItem: (oldIndex, newIndex) =>
+                          store.reorderPresets(oldIndex, newIndex),
+                      itemBuilder: (context, index) {
+                        final preset = presets[index];
                         return Padding(
                           key: ValueKey(preset.id),
                           padding: const EdgeInsets.only(bottom: 10),
                           child: ReorderableDelayedDragStartListener(
-                            index: i,
+                            index: index,
                             child: Dismissible(
                               key: ValueKey('dis-${preset.id}'),
                               direction: DismissDirection.horizontal,
-                              background: _delBg(h, Alignment.centerLeft),
+                              background: _delBg(harbor, Alignment.centerLeft),
                               secondaryBackground:
-                                  _delBg(h, Alignment.centerRight),
+                                  _delBg(harbor, Alignment.centerRight),
                               confirmDismiss: (_) =>
                                   _confirmDelete(context, preset),
                               onDismissed: (_) => store.deletePreset(preset.id),
@@ -88,7 +89,7 @@ class PresetsScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _newPreset(context),
-        backgroundColor: h.accent,
+        backgroundColor: harbor.accent,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         child: const Icon(Icons.add_rounded, size: 28),
@@ -96,10 +97,10 @@ class PresetsScreen extends StatelessWidget {
     );
   }
 
-  Widget _delBg(Harbor h, Alignment a) => Container(
+  Widget _delBg(Harbor harbor, Alignment alignment) => Container(
         decoration: BoxDecoration(
-            color: h.danger, borderRadius: BorderRadius.circular(12)),
-        alignment: a,
+            color: harbor.danger, borderRadius: BorderRadius.circular(12)),
+        alignment: alignment,
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: const Text('Delete',
             style: TextStyle(
@@ -109,8 +110,8 @@ class PresetsScreen extends StatelessWidget {
       );
 
   Future<bool> _confirmDelete(BuildContext context, Preset preset) async {
-    final h = context.harbor;
-    final r = await showDialog<bool>(
+    final harbor = context.harbor;
+    final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Delete "${preset.name}"?'),
@@ -122,14 +123,14 @@ class PresetsScreen extends StatelessWidget {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Delete', style: TextStyle(color: h.danger))),
+              child: Text('Delete', style: TextStyle(color: harbor.danger))),
         ],
       ),
     );
-    return r ?? false;
+    return result ?? false;
   }
 
-  Widget _empty(Harbor h) => Center(
+  Widget _empty(Harbor harbor) => Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 48),
           child: Column(
@@ -141,14 +142,14 @@ class PresetsScreen extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: h.ink)),
+                      color: harbor.ink)),
               const SizedBox(height: 6),
               Text(
                   'Presets are reusable sets of items — like your usual '
                   'toiletries. Tap + to build one, or save any list as a '
                   'preset from its menu.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: h.mut, height: 1.5)),
+                  style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5)),
             ],
           ),
         ),
@@ -162,12 +163,12 @@ class _PresetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
-    final catCount = preset.categories.length;
+    final harbor = context.harbor;
+    final categoryCount = preset.categories.length;
     final itemCount = preset.totalItems;
     return Container(
       decoration: BoxDecoration(
-        color: h.card,
+        color: harbor.card,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -198,17 +199,17 @@ class _PresetCard extends StatelessWidget {
                           style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w600,
-                              color: h.ink)),
+                              color: harbor.ink)),
                       const SizedBox(height: 3),
                       Text(
-                        '$catCount categor${catCount == 1 ? 'y' : 'ies'} · '
+                        '$categoryCount categor${categoryCount == 1 ? 'y' : 'ies'} · '
                         '$itemCount item${itemCount == 1 ? '' : 's'}',
-                        style: TextStyle(fontSize: 12.5, color: h.mut),
+                        style: TextStyle(fontSize: 12.5, color: harbor.mut),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: h.mut),
+                Icon(Icons.chevron_right_rounded, color: harbor.mut),
               ],
             ),
           ),
@@ -221,13 +222,13 @@ class _PresetCard extends StatelessWidget {
 /// Small dialog to name a new preset and pick its icon.
 Future<(String, String)?> _namePresetDialog(BuildContext context,
     {required String title}) {
-  final ctrl = TextEditingController();
+  final controller = TextEditingController();
   var icon = '🎒';
   return showDialog<(String, String)>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {
-        final h = context.harbor;
+        final harbor = context.harbor;
         return AlertDialog(
           title: Text(title),
           content: Row(
@@ -242,7 +243,7 @@ Future<(String, String)?> _namePresetDialog(BuildContext context,
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                      color: h.tile, borderRadius: BorderRadius.circular(12)),
+                      color: harbor.tile, borderRadius: BorderRadius.circular(12)),
                   alignment: Alignment.center,
                   child: Text(icon, style: const TextStyle(fontSize: 24)),
                 ),
@@ -250,12 +251,12 @@ Future<(String, String)?> _namePresetDialog(BuildContext context,
               const SizedBox(width: 12),
               Expanded(
                 child: TextField(
-                  controller: ctrl,
+                  controller: controller,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  onSubmitted: (v) {
-                    if (v.trim().isNotEmpty) {
-                      Navigator.of(context).pop((v.trim(), icon));
+                  onSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      Navigator.of(context).pop((value.trim(), icon));
                     }
                   },
                   decoration: const InputDecoration(
@@ -270,11 +271,11 @@ Future<(String, String)?> _namePresetDialog(BuildContext context,
                 child: const Text('Cancel')),
             TextButton(
                 onPressed: () {
-                  if (ctrl.text.trim().isNotEmpty) {
-                    Navigator.of(context).pop((ctrl.text.trim(), icon));
+                  if (controller.text.trim().isNotEmpty) {
+                    Navigator.of(context).pop((controller.text.trim(), icon));
                   }
                 },
-                child: Text('Create', style: TextStyle(color: h.accent))),
+                child: Text('Create', style: TextStyle(color: harbor.accent))),
           ],
         );
       },

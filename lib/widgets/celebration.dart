@@ -8,12 +8,12 @@ import '../theme.dart';
 /// Inserted as an overlay, ignores pointers, removes itself after ~1.3s.
 void showCelebration(BuildContext context) {
   final overlay = Overlay.of(context);
-  final h = context.harbor;
+  final harbor = context.harbor;
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => IgnorePointer(
       child: _ConfettiBurst(
-        colors: [h.accent, h.good, const Color(0xFFE9B949)],
+        colors: [harbor.accent, harbor.good, const Color(0xFFE9B949)],
         onDone: () => entry.remove(),
       ),
     ),
@@ -32,13 +32,13 @@ class _ConfettiBurst extends StatefulWidget {
 }
 
 class _Particle {
-  _Particle(Random rnd, List<Color> colors)
-      : angle = -pi / 2 + (rnd.nextDouble() - 0.5) * pi * 0.9,
-        speed = 260 + rnd.nextDouble() * 240,
-        size = 4.5 + rnd.nextDouble() * 3.5,
-        spin = (rnd.nextDouble() - 0.5) * 10,
-        color = colors[rnd.nextInt(colors.length)],
-        xJitter = (rnd.nextDouble() - 0.5) * 80;
+  _Particle(Random random, List<Color> colors)
+      : angle = -pi / 2 + (random.nextDouble() - 0.5) * pi * 0.9,
+        speed = 260 + random.nextDouble() * 240,
+        size = 4.5 + random.nextDouble() * 3.5,
+        spin = (random.nextDouble() - 0.5) * 10,
+        color = colors[random.nextInt(colors.length)],
+        xJitter = (random.nextDouble() - 0.5) * 80;
 
   final double angle;
   final double speed;
@@ -59,8 +59,8 @@ class _ConfettiBurstState extends State<_ConfettiBurst>
   @override
   void initState() {
     super.initState();
-    final rnd = Random();
-    _particles = List.generate(22, (_) => _Particle(rnd, widget.colors));
+    final random = Random();
+    _particles = List.generate(22, (_) => _Particle(random, widget.colors));
     final reduced = WidgetsBinding
         .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     if (reduced) {
@@ -90,28 +90,28 @@ class _ConfettiBurstState extends State<_ConfettiBurst>
 }
 
 class _ConfettiPainter extends CustomPainter {
-  _ConfettiPainter(this.particles, this.t);
+  _ConfettiPainter(this.particles, this.progress);
 
   final List<_Particle> particles;
-  final double t;
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
     final origin = Offset(size.width / 2, 110);
     final paint = Paint();
-    for (final p in particles) {
-      final dist = p.speed * t;
-      final x = origin.dx + p.xJitter + cos(p.angle) * dist;
-      final y = origin.dy + sin(p.angle) * dist + 380 * t * t;
-      final opacity = (1 - t).clamp(0.0, 1.0);
-      paint.color = p.color.withValues(alpha: opacity);
+    for (final particle in particles) {
+      final dist = particle.speed * progress;
+      final x = origin.dx + particle.xJitter + cos(particle.angle) * dist;
+      final y = origin.dy + sin(particle.angle) * dist + 380 * progress * progress;
+      final opacity = (1 - progress).clamp(0.0, 1.0);
+      paint.color = particle.color.withValues(alpha: opacity);
       canvas.save();
       canvas.translate(x, y);
-      canvas.rotate(p.spin * t);
+      canvas.rotate(particle.spin * progress);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(
-              center: Offset.zero, width: p.size, height: p.size * 0.7),
+              center: Offset.zero, width: particle.size, height: particle.size * 0.7),
           const Radius.circular(1.5),
         ),
         paint,
@@ -121,5 +121,5 @@ class _ConfettiPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ConfettiPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(_ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
 }

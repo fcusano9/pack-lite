@@ -11,7 +11,7 @@ Future<String?> showPresetPicker(BuildContext context) {
   return showModalBottomSheet<String>(
     context: context,
     builder: (context) {
-      final h = context.harbor;
+      final harbor = context.harbor;
       final presets = context.read<AppStore>().presets;
       return SafeArea(
         top: false,
@@ -24,7 +24,7 @@ Future<String?> showPresetPicker(BuildContext context) {
               height: 5,
               margin: const EdgeInsets.only(top: 8, bottom: 10),
               decoration: BoxDecoration(
-                color: h.line,
+                color: harbor.line,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -33,7 +33,7 @@ Future<String?> showPresetPicker(BuildContext context) {
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: h.ink)),
+                      color: harbor.ink)),
             ),
             const SizedBox(height: 6),
             if (presets.isEmpty)
@@ -43,7 +43,7 @@ Future<String?> showPresetPicker(BuildContext context) {
                   'No presets yet. Create reusable presets in Settings → '
                   'List Presets, or save any list as a preset from its menu.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: h.mut, height: 1.5),
+                  style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5),
                 ),
               )
             else
@@ -52,8 +52,8 @@ Future<String?> showPresetPicker(BuildContext context) {
                   shrinkWrap: true,
                   padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
                   itemCount: presets.length,
-                  itemBuilder: (context, i) =>
-                      _PresetRow(preset: presets[i]),
+                  itemBuilder: (context, index) =>
+                      _PresetRow(preset: presets[index]),
                 ),
               ),
           ],
@@ -70,21 +70,21 @@ class _PresetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = context.harbor;
-    final catCount = preset.categories.length;
+    final harbor = context.harbor;
+    final categoryCount = preset.categories.length;
     final itemCount = preset.totalItems;
     return ListTile(
       onTap: () => Navigator.of(context).pop(preset.id),
       leading: Text(preset.icon, style: const TextStyle(fontSize: 24)),
       title: Text(preset.name,
           style: TextStyle(
-              fontSize: 15, fontWeight: FontWeight.w600, color: h.ink)),
+              fontSize: 15, fontWeight: FontWeight.w600, color: harbor.ink)),
       subtitle: Text(
-        '$catCount categor${catCount == 1 ? 'y' : 'ies'} · '
+        '$categoryCount categor${categoryCount == 1 ? 'y' : 'ies'} · '
         '$itemCount item${itemCount == 1 ? '' : 's'}',
-        style: TextStyle(fontSize: 12.5, color: h.mut),
+        style: TextStyle(fontSize: 12.5, color: harbor.mut),
       ),
-      trailing: Icon(Icons.add_rounded, color: h.accent),
+      trailing: Icon(Icons.add_rounded, color: harbor.accent),
     );
   }
 }
