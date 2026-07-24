@@ -106,52 +106,6 @@ class _CardList extends StatelessWidget {
     return result ?? false;
   }
 
-  void _showCardMenu(BuildContext context, PackingList list) {
-    final harbor = context.harbor;
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 34,
-              height: 5,
-              margin: const EdgeInsets.only(top: 8, bottom: 6),
-              decoration: BoxDecoration(
-                color: harbor.line,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.copy_rounded, size: 20, color: harbor.ink),
-              title: Text('Duplicate',
-                  style: TextStyle(fontSize: 14.5, color: harbor.ink)),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                store.duplicateList(list.id);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete_outline_rounded,
-                  size: 20, color: harbor.danger),
-              title: Text('Delete',
-                  style: TextStyle(fontSize: 14.5, color: harbor.danger)),
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                if (await _confirmDelete(context, list)) {
-                  store.deleteList(list.id);
-                }
-              },
-            ),
-            const SizedBox(height: 6),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final harbor = context.harbor;
@@ -183,12 +137,7 @@ class _CardList extends StatelessWidget {
         ),
       ),
       onReorderItem: (oldIndex, newIndex) {
-        if (newIndex == oldIndex) {
-          // Long-press released in place: show the card menu instead.
-          _showCardMenu(context, store.lists[oldIndex]);
-        } else {
-          store.reorderLists(oldIndex, newIndex);
-        }
+        if (newIndex != oldIndex) store.reorderLists(oldIndex, newIndex);
       },
       itemBuilder: (context, index) {
         final list = store.lists[index];
@@ -201,10 +150,31 @@ class _CardList extends StatelessWidget {
               key: ValueKey('dismiss-${list.id}'),
               direction: DismissDirection.horizontal,
               background: _SwipeBackground(
-                  alignment: Alignment.centerLeft, color: harbor.danger),
+                alignment: Alignment.centerLeft,
+                color: harbor.accent,
+                label: 'Duplicate',
+                icon: Icons.copy_rounded,
+              ),
               secondaryBackground: _SwipeBackground(
-                  alignment: Alignment.centerRight, color: harbor.danger),
-              confirmDismiss: (_) => _confirmDelete(context, list),
+                alignment: Alignment.centerRight,
+                color: harbor.danger,
+                label: 'Delete',
+                icon: Icons.delete_outline_rounded,
+              ),
+              confirmDismiss: (direction) async {
+                if (direction == DismissDirection.startToEnd) {
+                  // Swipe right duplicates; the card stays in place.
+                  store.duplicateList(list.id);
+                  Haptics.tap();
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(SnackBar(
+                        content: Text('Duplicated "${list.name}"')));
+                  return false;
+                }
+                // Swipe left deletes.
+                return _confirmDelete(context, list);
+              },
               onDismissed: (_) => store.deleteList(list.id),
               child: ListCard(list: list, onTap: () => onOpen(context, list)),
             ),
@@ -216,13 +186,33 @@ class _CardList extends StatelessWidget {
 }
 
 class _SwipeBackground extends StatelessWidget {
-  const _SwipeBackground({required this.alignment, required this.color});
+  const _SwipeBackground({
+    required this.alignment,
+    required this.color,
+    required this.label,
+    required this.icon,
+  });
 
   final Alignment alignment;
   final Color color;
+  final String label;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
+    final leadingIcon = alignment == Alignment.centerLeft;
+    final content = <Widget>[
+      Icon(icon, color: Colors.white, size: 18),
+      const SizedBox(width: 6),
+      Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ];
     return Container(
       decoration: BoxDecoration(
         color: color,
@@ -230,13 +220,9 @@ class _SwipeBackground extends StatelessWidget {
       ),
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: const Text(
-        'Delete',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 13.5,
-          fontWeight: FontWeight.w700,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: leadingIcon ? content : content.reversed.toList(),
       ),
     );
   }
