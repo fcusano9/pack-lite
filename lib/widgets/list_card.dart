@@ -18,7 +18,7 @@ class ListCard extends StatelessWidget {
     if (list.totalItems == 0) {
       countText = '0 items';
     } else if (ready) {
-      countText = 'Ready ✓';
+      countText = 'All Packed ✓';
     } else {
       countText = '${list.packedItems} of ${list.totalItems}';
     }

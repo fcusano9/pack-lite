@@ -285,10 +285,6 @@ class AppStore extends ChangeNotifier {
     });
   }
 
-  void setHidePacked(String listId, bool hide) {
-    _mutate(() => byId(listId)?.hidePacked = hide);
-  }
-
   // ---- presets ----
 
   Preset? presetById(String id) {

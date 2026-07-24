@@ -142,7 +142,6 @@ class PackingList {
     required this.id,
     required this.name,
     required this.icon,
-    this.hidePacked = false,
     List<Item>? items,
     List<PackCategory>? categories,
   })  : items = items ?? [],
@@ -151,7 +150,6 @@ class PackingList {
   final String id;
   String name;
   String icon;
-  bool hidePacked;
 
   /// Loose items that belong to the list directly, not to any category.
   /// Categories are optional; a simple list is just loose items.
@@ -173,7 +171,6 @@ class PackingList {
         id: json['id'] as String,
         name: json['name'] as String,
         icon: json['icon'] as String? ?? '🎒',
-        hidePacked: json['hidePacked'] as bool? ?? false,
         items: (json['items'] as List<dynamic>? ?? [])
             .map((e) => Item.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -186,7 +183,6 @@ class PackingList {
         'id': id,
         'name': name,
         'icon': icon,
-        if (hidePacked) 'hidePacked': true,
         'items': items.map((e) => e.toJson()).toList(),
         'categories': categories.map((e) => e.toJson()).toList(),
       };
