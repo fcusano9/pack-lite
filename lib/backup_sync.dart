@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 /// if the device is offline or the user has backup switched off.
 class BackupSync {
   static const MethodChannel _channel =
-      MethodChannel('com.frankcusano.pack_lite/backup');
+      MethodChannel('com.packlite.app/backup');
 
   /// Best effort: never throws. A failed nudge must not break the delete the
   /// user actually asked for, and there is nothing useful to tell them about

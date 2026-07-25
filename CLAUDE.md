@@ -40,6 +40,14 @@ chip in the title row + thin progress bar).
 (passwords live in key.properties). Keep a secure backup — losing the keystore
 means no more updates that install over existing installs.
 
+## App identity
+`applicationId` and iOS bundle id are both **`com.packlite.app`** — product-branded on
+purpose, not a personal name. Treat it as permanent: Google will not let you change an
+`applicationId` after a Play Store release (a "change" is a new listing that forfeits
+installs, reviews and ratings). Even before release, changing it makes Android treat the
+build as an entirely different app — it installs *alongside* the old one rather than over
+it, and none of the existing data carries over, so export first.
+
 ## Gotchas (cost us real time — heed these)
 - `compileSdk = 36` is set explicitly in `android/app/build.gradle.kts` (file_picker's
   transitive deps require it). Don't drop it back to the Flutter default.
@@ -60,7 +68,7 @@ means no more updates that install over existing installs.
     with no account. `deleteAllData()` calls `BackupSync.dataChanged()` to push the empty
     state promptly, but that's a request the system schedules, not a guarantee.
   - **To test a genuinely fresh install**, wipe the cloud dataset first:
-    `adb shell bmgr wipe <transport> com.frankcusano.pack_lite` (find `<transport>`, marked
+    `adb shell bmgr wipe <transport> com.packlite.app` (find `<transport>`, marked
     `*`, via `adb shell bmgr list transports`). Uninstalling alone is *not* enough.
   - To reset local data only, use Settings → Apps → Pack Lite → Storage → **Clear data**;
     clearing data doesn't trigger a restore, reinstalling does.
