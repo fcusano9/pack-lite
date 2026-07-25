@@ -1,27 +1,3 @@
-# Pack Lite — Regression Test Plan
-
-A manual checklist to run on-device after any major change (new milestone, big
-refactor, dependency bump, release build) to confirm nothing that used to work
-has broken. Written to match the app's **current** behaviour, not just the
-original requirements — where the two differ, this doc follows the shipping app.
-
-## How to use
-
-- **Quick pass** after every build: run the [Smoke Test](#0-smoke-test-p0) (~5 min).
-  If anything there fails, stop and fix before going further.
-- **Full pass** before a release or after a large refactor: run every section.
-- Tick the `- [ ]` box when a case passes. If it fails, note what happened next
-  to the box (e.g. `FAIL: no haptic on S25`).
-- Reset a clean baseline between full passes with **Settings → Delete All Data**
-  (or a fresh install), so seeded sample data is present and predictable.
-
-## Test environment
-
-- **Primary device:** Samsung Galaxy S25 Ultra (release APK sideload).
-- Re-run the smoke test on a second device / screen size when a change touches
-  layout, and in **both light and dark** themes when it touches visuals.
-- iOS is not currently buildable (no Xcode) — Android only for now.
-
 ## Priority legend
 
 | Tag | Meaning |
@@ -33,9 +9,6 @@ original requirements — where the two differ, this doc follows the shipping ap
 ---
 
 ## 0. Smoke Test (P0)
-
-The fast "is it fundamentally alive?" pass. All of these are covered in more
-detail below; this is the short list to run after every build.
 
 - [ ] **SMK-1** App launches to the Home screen with the four seeded lists visible.
 - [ ] **SMK-2** Tapping a list opens it and shows its items.
@@ -273,17 +246,3 @@ detail below; this is the short list to run after every build.
 - [ ] **EDGE-4** Rapidly checking several items in a row queues their animations without
   losing any (all end up in PACKED).
 
----
-
-## Sign-off
-
-| Date | Build / version | Device | Smoke | Full | Tester | Notes |
-|------|-----------------|--------|-------|------|--------|-------|
-|      |                 |        |       |      |        |       |
-|      |                 |        |       |      |        |       |
-
-## Non-goals (deliberately absent — do **not** file as bugs)
-
-No trip dates, no weather/smart suggestions, no built-in templates beyond the
-user's presets, no item quantities, no sharing/collaboration/cloud sync, no
-accounts/ads/analytics.
