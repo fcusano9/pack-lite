@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.frankcusano.pack_lite"
+    namespace = "com.packlite.app"
     // Bumped from flutter.compileSdkVersion (34) — file_picker's transitive
     // deps now require compiling against API 36. targetSdk stays on Flutter's
     // default so runtime behavior is unchanged.
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.frankcusano.pack_lite"
+        applicationId = "com.packlite.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

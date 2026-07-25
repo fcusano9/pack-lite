@@ -1,4 +1,4 @@
-package com.frankcusano.pack_lite
+package com.packlite.app
 
 import android.app.backup.BackupManager
 import io.flutter.embedding.android.FlutterActivity
@@ -7,7 +7,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private companion object {
-        const val BACKUP_CHANNEL = "com.frankcusano.pack_lite/backup"
+        const val BACKUP_CHANNEL = "com.packlite.app/backup"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

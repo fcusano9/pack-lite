@@ -10,7 +10,7 @@ import 'package:pack_lite/store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('com.frankcusano.pack_lite/backup');
+  const channel = MethodChannel('com.packlite.app/backup');
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
