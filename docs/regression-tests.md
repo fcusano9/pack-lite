@@ -20,6 +20,8 @@
 - [ ] **SMK-8** `···` menu → **Uncheck All** resets a list; nothing is deleted.
 - [ ] **SMK-9** Change theme in Settings (Light/Dark/System) and it applies immediately.
 - [ ] **SMK-10** Force-kill the app and relaunch — all changes from this session persisted.
+- [ ] **SMK-11** The launcher shows the app as **"Pack Lite"** under its icon — not
+  "pack_lite" or "packlite". Check this on the home screen and in Settings → Apps.
 
 ---
 
