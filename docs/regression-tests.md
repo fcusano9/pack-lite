@@ -25,8 +25,11 @@
 
 ## 1. First launch & seed data (P1)
 
-- [ ] **SEED-1** On a fresh install (or after Delete All Data + relaunch), Home shows
-  four sample lists: **Hawaii Vacation, Ski Trip, Camping Weekend, Weekend in NYC**.
+- [ ] **SEED-1** On a **first-ever launch** — no stored data at all — Home shows four
+  sample lists: **Hawaii Vacation, Ski Trip, Camping Weekend, Weekend in NYC**. Seeding
+  only happens when no data document exists, so **Delete All Data does not reseed**
+  (it writes an empty document; see DATA-7). Reinstalling isn't enough to reach this
+  state either — see the Auto Backup gotcha in `CLAUDE.md`.
 - [ ] **SEED-2** Settings → List Presets shows three seeded presets: **Toiletries,
   Tech & Chargers, Beach Gear**.
 - [ ] **SEED-3** Camping Weekend shows an **All Packed** state (fully checked); the
@@ -203,7 +206,16 @@
   restores lists and presets intact (names, icons, items, checked states).
 - [ ] **DATA-7** **Delete All Data** is a **two-step** confirm: a warning dialog, then a
   **type-DELETE** dialog (the final button is disabled until "DELETE" is typed).
-  Completing it clears all lists and presets; Home shows the empty state.
+  Completing it clears all lists and presets; Home shows the empty state. The first
+  dialog states that the **Google account backup** is cleared too.
+- [ ] **DATA-8** **Deleted data stays deleted across a reinstall.** Delete All Data, wait
+  a few minutes on Wi-Fi (Android schedules the backup pass; it can't run offline), then
+  uninstall and reinstall the APK. **Pass = the deleted lists do not come back.** Home
+  will show either the empty state (the emptied snapshot was restored) or the seed lists
+  (nothing was restored) — both are fine; the old lists reappearing is the failure. This
+  is the regression guard for the Auto Backup restore bug (issue #24); see the Auto
+  Backup gotcha in `CLAUDE.md`. If it fails, confirm the backup pass actually ran before
+  blaming the app.
 
 ## 12. Feedback — haptics & sound (P1)
 
@@ -219,6 +231,10 @@
 - [ ] **THEME-2** **System** mode follows the OS toggle live (flip system dark mode).
 - [ ] **THEME-3** Cobalt is used for actions & in-progress; **green only** for done
   states (All Packed card, completed progress bar, checkmarks).
+- [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
+  Reinstalling restores the saved theme from the Google account backup, so this only
+  reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.
+  Covered automatically by `test/theme_default_test.dart`.
 
 ## 14. Accessibility / type scaling (P2)
 

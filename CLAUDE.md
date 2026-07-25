@@ -21,6 +21,8 @@ feature creep.
   lists + presets on first launch.
 - `models.dart` — `Item`, `PackCategory`, `PackingList`, `Preset` (+ toJson/fromJson).
 - `theme.dart` — the **Harbor** design language as a `ThemeExtension` (light + dark).
+- `backup_sync.dart` — nudges Android Auto Backup (`BackupManager.dataChanged()` over
+  a MethodChannel to `MainActivity.kt`) after destructive changes. See the gotcha below.
 - `screens/` — home, list_screen, preset_editor, presets_screen, settings_screen.
 - `sheets/` — new_list, category, icon_picker, preset_picker (bottom sheets).
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
@@ -47,6 +49,21 @@ means no more updates that install over existing installs.
   vibration via the `vibration` package (with an in-app strength setting), sound via
   `audioplayers` routed to the media stream. Never rely on HapticFeedback/SystemSound
   for the check-off feel.
+- **Android Auto Backup silently restores old data on reinstall, so reinstall-based
+  testing lies to you.** `android:allowBackup` isn't declared, so it defaults to `true`:
+  all of `shared_prefs/` (`packlite.data`, `packlite.theme`, `packlite.vibration` — every
+  byte the app owns) is uploaded to the user's Google account roughly daily and restored
+  when the app is installed again. Two bugs were filed against this before it was
+  understood: "fresh install defaults to light theme" (#23, not a theme bug — the restored
+  snapshot carried `packlite.theme`) and "deleted lists come back after reinstall" (#24).
+  - Backup is deliberately left **on** — it's what gives users phone-to-phone migration
+    with no account. `deleteAllData()` calls `BackupSync.dataChanged()` to push the empty
+    state promptly, but that's a request the system schedules, not a guarantee.
+  - **To test a genuinely fresh install**, wipe the cloud dataset first:
+    `adb shell bmgr wipe <transport> com.frankcusano.pack_lite` (find `<transport>`, marked
+    `*`, via `adb shell bmgr list transports`). Uninstalling alone is *not* enough.
+  - To reset local data only, use Settings → Apps → Pack Lite → Storage → **Clear data**;
+    clearing data doesn't trigger a restore, reinstalling does.
 - Verifying on Flutter **web** (browser pane): `main.dart` calls
   `SemanticsBinding.instance.ensureSemantics()` so `read_page` sees widgets. Coordinate
   clicks are unreliable (2× display scaling), especially top-bar icons — prefer element
