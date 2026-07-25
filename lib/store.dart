@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'backup_sync.dart';
 import 'haptics.dart';
 import 'models.dart';
 import 'seed.dart';
@@ -98,6 +99,9 @@ class AppStore extends ChangeNotifier {
     presets.clear();
     notifyListeners();
     await _persist();
+    // Ask Android to replace its cloud snapshot now that everything is gone,
+    // so reinstalling can't restore the lists the user just deleted.
+    await BackupSync.dataChanged();
   }
 
   Future<void> _persist() async {

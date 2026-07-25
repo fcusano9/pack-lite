@@ -5,7 +5,14 @@ between heavyweight packing apps (which force trip dates and other complexity)
 and plain to-do apps (which lack packing-specific features like reusable presets
 and a one-tap "uncheck all" to reset a list for the next trip).
 
-No account, no ads, no cloud — all data stays on the device.
+No account, no ads, no servers of our own — the app never sends your data
+anywhere, and works fully offline.
+
+> **Note on Android backups:** Android's own Auto Backup is left enabled, so the
+> app's data is included in your device's Google account backup and comes back
+> automatically when you set up a new phone. That's a system feature, not
+> something Pack Lite uploads. Deleting all data in Settings clears the backed-up
+> copy too.
 
 ## Features
 
