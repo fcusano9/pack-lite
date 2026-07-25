@@ -189,8 +189,10 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete all data?'),
         content: const Text(
-            'Every list and preset will be permanently deleted. This cannot '
-            'be undone. Consider exporting a backup first.'),
+            'Every list and preset will be permanently deleted — on this '
+            'device and from your Google account backup, so reinstalling '
+            'won\'t bring them back. This cannot be undone. Consider '
+            'exporting a copy first.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(context).pop(false),
