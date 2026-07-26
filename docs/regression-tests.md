@@ -81,7 +81,11 @@
 - [ ] **ITEM-1** Each section has an **Add item** row at its bottom. Tapping it opens an
   inline field (no dialog) — the item appears in that section.
 - [ ] **ITEM-2** Pressing **Enter** commits the item and **keeps the add row open**
-  (refocused) for fast repeated entry.
+  (refocused) for fast repeated entry — **the keyboard must stay up**. Check this on an
+  **empty** list too: the very first item is the case that used to drop the keyboard
+  (issue #22), and every item after it behaved correctly, so testing a list that already
+  has items will not catch a regression here.
+  *(Guarded by `add_item_keyboard_test.dart`, list and preset editor.)*
 - [ ] **ITEM-3** Tapping outside the field commits the current text and closes the row;
   submitting an **empty** field just closes it (no blank item created).
 - [ ] **ITEM-4** Tapping an item's checkbox: plays a haptic tick + pop sound, the check
