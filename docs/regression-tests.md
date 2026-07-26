@@ -76,6 +76,11 @@
 - [ ] **NEW-7** On the list screen, tapping the **icon + title** in the header opens the
   **Edit List** sheet (no preset chips when editing); changing name/icon updates the
   header and the Home card.
+- [ ] **NEW-8** A list with nothing in it shows the empty state: 📝, the heading
+  **"Start your list"**, and two buttons — **Add item** and **New Category**. There is
+  **no explanatory subtitle** beneath the heading (removed in #17), and the buttons sit
+  directly under it without a gap where the text used to be. Both buttons work: Add item
+  opens the inline field (see ITEM-2), New Category opens the category sheet.
 
 ## 4. Items — add / check / rename / delete (P0)
 
