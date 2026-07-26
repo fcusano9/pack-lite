@@ -1,0 +1,95 @@
+name: Build iOS
+
+# There is no local iOS toolchain (no Xcode on the dev Mac), so for now this
+# workflow is the ONLY thing that compiles the iOS target at all. GitHub's macOS
+# runners ship Xcode, and they're free for public repositories.
+#
+# It does two things:
+#   1. a release compile for a real device, unsigned — proves the iOS target and
+#      every plugin's iOS implementation actually build;
+#   2. a simulator build that is then launched and screenshotted — proves the app
+#      starts, which compiling alone does not.
+#
+# `flutter analyze` and `flutter test` are deliberately NOT repeated here; the
+# Build APK workflow already gates those on the same commit, and macOS runner
+# minutes are slower.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build iOS (unsigned) + simulator smoke test
+    runs-on: macos-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.44.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Unsigned because the signing identity lives on Frank's machine and Apple
+      # account, not here. The output can't be installed on a device; it exists
+      # to prove the build is not broken.
+      - name: Build iOS (release, unsigned)
+        run: flutter build ios --release --no-codesign
+
+      - name: Build for simulator
+        run: flutter build ios --simulator --debug
+
+      # NOTE: `continue-on-error` is set only until this has had one green run —
+      # simulator naming and boot behaviour shift between Xcode versions and this
+      # could not be validated locally (no Xcode). Once it passes, delete the
+      # `continue-on-error` line so a failed launch actually fails the build.
+      - name: Launch in a simulator and screenshot it
+        id: smoke
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          UDID=$(xcrun simctl list devices available --json | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          candidates = [d for runtime in devices for d in devices[runtime]
+                        if 'iPhone' in d['name']]
+          if not candidates:
+              sys.exit('No iPhone simulator available on this runner')
+          print(candidates[-1]['udid'])
+          ")
+          echo "Using simulator $UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/ios/iphonesimulator/Runner.app
+          # A failed launch exits non-zero here, so this is itself a real check.
+          xcrun simctl launch "$UDID" com.packlite.app
+          sleep 12
+          xcrun simctl io "$UDID" screenshot pack-lite-ios.png
+          # A launch that crashed immediately would still screenshot fine (an
+          # empty springboard), so confirm the process is actually still alive
+          # rather than trusting that the PNG exists.
+          xcrun simctl spawn "$UDID" launchctl list | grep -q com.packlite.app
+
+      - name: Upload iOS build and screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-lite-ios
+          path: |
+            build/ios/iphoneos/Runner.app
+            pack-lite-ios.png
+          if-no-files-found: warn

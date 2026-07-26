@@ -293,3 +293,29 @@
 - [ ] **EDGE-4** Rapidly checking several items in a row queues their animations without
   losing any (all end up in PACKED).
 
+## 17. iOS (P2 — not yet run on hardware)
+
+Android is the tested platform; iOS has only ever been compiled. Work through §0's smoke
+test first, then these — they cover the places iOS is **deliberately different**, so a
+difference here is not automatically a bug. See the iOS section of `CLAUDE.md`.
+
+- [ ] **IOS-1** The app launches and Home renders with the seeded lists (CI already checks
+  this much via its simulator screenshot artifact — start here only if that's green).
+- [ ] **IOS-2** Check-off **haptics** fire. They'll feel coarser than Android and the
+  Settings strength levels less distinct, because iOS falls back to `HapticFeedback.*`
+  with no amplitude control. Expected.
+- [ ] **IOS-3** The check-off **pop is silent when the ringer switch is off**, and audible
+  when it's on. This is intentional (`AVAudioSessionCategory.ambient`) and the opposite of
+  the Android behaviour, where sound deliberately bypasses system touch-sound settings.
+- [ ] **IOS-4** **Export** opens the iOS share sheet; **Import** opens the Files document
+  picker and a round-trip restores the data (no permission prompt should appear).
+- [ ] **IOS-5** Settings → ABOUT links open Safari. iOS needs no `<queries>` equivalent for
+  `https`, so if these fail the cause is different from the Android case in SET-8.
+- [ ] **IOS-6** **Delete All Data** clears everything locally. Note the Google-account
+  backup wording in the dialog is Android-specific — iOS has no equivalent push, so
+  reinstalling may restore from an iCloud backup regardless (see #24 and `CLAUDE.md`).
+- [ ] **IOS-7** The launcher shows **"Pack Lite"**, and the icon is currently the **Flutter
+  placeholder** — that's issue #12, not an iOS fault.
+- [ ] **IOS-8** Light and dark both follow the system setting, and text scales with the iOS
+  Display & Text Size setting without clipping.
+

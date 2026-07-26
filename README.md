@@ -49,6 +49,21 @@ flutter run                                    # run on a connected device or em
 flutter build apk --release --split-per-abi    # release APKs
 ```
 
+### iOS
+
+Android is the platform actively tested on hardware. The iOS target builds, but is
+**not yet verified on a device** — CI compiles it on every pull request (release,
+unsigned) and launches it in a simulator to confirm it starts, publishing a screenshot
+as a build artifact.
+
+```sh
+flutter build ios --release --no-codesign    # compile check, no signing identity needed
+flutter build ios --simulator --debug        # runnable in the iOS Simulator
+```
+
+Both need a full Xcode install (free from the App Store) plus CocoaPods; the Command
+Line Tools alone aren't enough.
+
 ### Signing
 
 Release builds are signed with a keystore that is **not** in this repo
