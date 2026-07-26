@@ -26,6 +26,9 @@ feature creep.
 - `screens/` — home, list_screen, preset_editor, presets_screen, settings_screen.
 - `sheets/` — new_list, category, icon_picker, preset_picker (bottom sheets).
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
+- `links.dart` — outbound URLs (repo, GitHub Sponsors) shown in Settings → ABOUT.
+  Opened via `url_launcher`; Android needs the `https` VIEW `<intent>` in the manifest's
+  `<queries>` or the taps silently do nothing on Android 11+.
 - Preset→list merge rule: same-name categories merge; duplicate item names skipped.
 
 ## Harbor design language
