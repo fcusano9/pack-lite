@@ -194,4 +194,16 @@ class PackingList {
         items: items.map((e) => e.copy()).toList(),
         categories: categories.map((e) => e.copy()).toList(),
       );
+
+  /// Clears the packed state of every item, loose and categorised.
+  void uncheckAll() {
+    for (final item in items) {
+      item.checked = false;
+    }
+    for (final category in categories) {
+      for (final item in category.items) {
+        item.checked = false;
+      }
+    }
+  }
 }

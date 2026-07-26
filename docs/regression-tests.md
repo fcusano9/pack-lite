@@ -51,7 +51,8 @@
 - [ ] **HOME-5** Tapping a card opens that list.
 - [ ] **HOME-6** Swipe a card **right→** reveals a cobalt **Duplicate** background; on
   release the list is duplicated as **"<name> copy"** inserted directly below the
-  original, a snackbar confirms, and the original card stays in place.
+  original, a snackbar confirms, and the original card stays in place. The new card reads
+  **`0 of N`** with an empty bar — see REUSE-4.
 - [ ] **HOME-7** Swipe a card **←left** reveals a red **Delete** background and shows a
   **confirmation dialog**; Cancel keeps it, Delete removes it.
 - [ ] **HOME-8** Long-press a card, then drag to **reorder**; the new order sticks.
@@ -182,6 +183,10 @@
 - [ ] **REUSE-2** **Uncheck All** is **disabled** when 0 items are packed.
 - [ ] **REUSE-3** Duplicating a list from Home (swipe right) yields an independent copy —
   editing the copy doesn't touch the original.
+- [ ] **REUSE-4** The duplicate starts **fully unpacked** (`0 of N`, empty progress bar)
+  even when the original was partly or wholly packed — and the **original keeps its own
+  progress**. Test with a list that has packed items in **both** a category and the loose
+  section. *(Guarded by `duplicate_list_test.dart`.)*
 
 ## 10. Settings (P1)
 
