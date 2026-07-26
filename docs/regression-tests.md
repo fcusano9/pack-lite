@@ -187,6 +187,13 @@
 - [ ] **SET-5** **Language** row reads "English" and is disabled (non-interactive).
 - [ ] **SET-6** The app **version** shows centered at the bottom ("Pack Lite <version>")
   and matches the installed build.
+- [ ] **SET-7** **ABOUT → View Source on GitHub** opens the repo in the browser; the row
+  shows an **open-in-new** glyph (not a chevron) to signal it leaves the app.
+- [ ] **SET-8** **ABOUT → Sponsor on GitHub** opens the **sponsors** page — confirm the
+  URL really is `/sponsors/`, not the repo. **Test on a real device:** Android 11+ hides
+  other apps unless declared in the manifest `<queries>`, so a broken build fails by doing
+  *nothing* on tap. Returning to the app leaves Settings exactly as it was.
+  *(Wiring guarded by `settings_links_test.dart`.)*
 
 ## 11. Data — export / import / delete (P1)
 

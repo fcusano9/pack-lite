@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_info.dart';
 import '../data_io.dart';
 import '../haptics.dart';
+import '../links.dart';
 import '../sound.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -97,6 +99,18 @@ class SettingsScreen extends StatelessWidget {
                         danger: true,
                         onTap: () => _deleteAll(context)),
                   ]),
+                  _label(harbor, 'ABOUT'),
+                  _card(harbor, [
+                    _row(context,
+                        label: 'View Source on GitHub',
+                        external: true,
+                        onTap: () => _openLink(context, Links.sourceCode)),
+                    _divider(harbor),
+                    _row(context,
+                        label: 'Sponsor on GitHub',
+                        external: true,
+                        onTap: () => _openLink(context, Links.sponsor)),
+                  ]),
                   const SizedBox(height: 28),
                   Center(
                     child: Text(
@@ -113,6 +127,26 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // ---- outbound links ----
+
+  /// Opens [url] in the browser. Failure is quiet but not silent: a device with
+  /// no browser, or a blocked intent, gets a toast rather than a dead tap.
+  Future<void> _openLink(BuildContext context, String url) async {
+    final messenger = ScaffoldMessenger.of(context);
+    bool opened;
+    try {
+      opened = await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication);
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(content: Text('Couldn\'t open the link')));
+    }
   }
 
   // ---- data actions ----
@@ -272,6 +306,7 @@ class SettingsScreen extends StatelessWidget {
       String? trailing,
       bool danger = false,
       bool enabled = true,
+      bool external = false,
       VoidCallback? onTap}) {
     final harbor = context.harbor;
     return Material(
@@ -293,8 +328,15 @@ class SettingsScreen extends StatelessWidget {
               if (onTap != null && !danger)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
-                  child: Icon(Icons.chevron_right_rounded,
-                      size: 20, color: harbor.mut),
+                  // A chevron reads as "goes deeper in this app", so external
+                  // links get the open-in-new glyph instead — the row leaves
+                  // Pack Lite entirely.
+                  child: Icon(
+                      external
+                          ? Icons.open_in_new_rounded
+                          : Icons.chevron_right_rounded,
+                      size: external ? 16 : 20,
+                      color: harbor.mut),
                 ),
             ],
           ),
