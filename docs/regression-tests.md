@@ -76,6 +76,11 @@
 - [ ] **NEW-7** On the list screen, tapping the **icon + title** in the header opens the
   **Edit List** sheet (no preset chips when editing); changing name/icon updates the
   header and the Home card.
+- [ ] **NEW-8** A list with nothing in it shows the empty state: 📝, the heading
+  **"Start your list"**, the subtitle **"Add items one by one, or group them into
+  categories."**, and two buttons — **Add item** and **New Category**. The subtitle should
+  name both paths and must not read as though setup is required (#17). Both buttons work:
+  Add item opens the inline field (see ITEM-2), New Category opens the category sheet.
 
 ## 4. Items — add / check / rename / delete (P0)
 
@@ -249,6 +254,14 @@
 - [ ] **THEME-2** **System** mode follows the OS toggle live (flip system dark mode).
 - [ ] **THEME-3** Cobalt is used for actions & in-progress; **green only** for done
   states (All Packed card, completed progress bar, checkmarks).
+- [ ] **THEME-5** **Menus feel snappy** (issue #18). The `···` and **+** popup menus, the
+  long-press category menu (list *and* preset editor), and the **icon** and **preset**
+  pickers all open in ~140ms and dismiss faster still — open and close each a few times in
+  a row, which is where the old 300ms was noticeable. Nothing should flicker, land
+  half-drawn, or drop the first tap.
+- [ ] **THEME-6** By contrast the **New List** and **Category** sheets, and the **Reorder
+  categories** sheet, keep the slower default motion — this is deliberate (see the Harbor
+  motion note in `CLAUDE.md`), not an oversight.
 - [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
   Reinstalling restores the saved theme from the Google account backup, so this only
   reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.

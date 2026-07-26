@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../haptics.dart';
 import '../models.dart';
+import '../motion.dart';
 import '../sheets/category_sheet.dart';
 import '../sheets/new_list_sheet.dart';
 import '../sheets/preset_picker.dart';
@@ -238,6 +239,8 @@ class _ListScreenState extends State<ListScreen> {
     final harbor = context.harbor;
     showModalBottomSheet<void>(
       context: context,
+      // An action menu, not a form — matches the popup menus' pace.
+      sheetAnimationStyle: Motion.menu,
       builder: (sheetContext) => SafeArea(
         top: false,
         child: Column(
@@ -963,6 +966,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           PopupMenuButton<String>(
+            popUpAnimationStyle: Motion.menu,
             icon: Icon(Icons.add_rounded, size: 24, color: harbor.accent),
             color: harbor.card,
             shape:
@@ -980,6 +984,7 @@ class _Header extends StatelessWidget {
             ],
           ),
           PopupMenuButton<String>(
+            popUpAnimationStyle: Motion.menu,
             icon: Icon(Icons.more_horiz_rounded, size: 22, color: harbor.accent),
             color: harbor.card,
             shape:
@@ -1150,7 +1155,7 @@ class _EmptyList extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Add items one by one — no setup needed.',
+              'Add items one by one, or group them into categories.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5),
             ),

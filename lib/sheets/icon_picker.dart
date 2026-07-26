@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../icons.dart';
+import '../motion.dart';
 import '../theme.dart';
 
 Future<String?> showIconPicker(BuildContext context, {required String current}) {
   return showModalBottomSheet<String>(
     context: context,
+    // Pick-one-and-dismiss, so it moves at menu pace rather than form pace.
+    sheetAnimationStyle: Motion.menu,
     builder: (context) {
       final harbor = context.harbor;
       return SafeArea(
