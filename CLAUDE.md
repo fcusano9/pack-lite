@@ -75,6 +75,18 @@ it, and none of the existing data carries over, so export first.
     `*`, via `adb shell bmgr list transports`). Uninstalling alone is *not* enough.
   - To reset local data only, use Settings → Apps → Pack Lite → Storage → **Clear data**;
     clearing data doesn't trigger a restore, reinstalling does.
+- **`Container(decoration: cond ? null : BoxDecoration(...))` silently destroys child
+  state.** Container only inserts a `DecoratedBox` when `decoration != null`, so flipping
+  that condition changes the tree *depth* below it. Flutter can't match the old elements,
+  so their `State` is disposed and rebuilt — and a `TextField` in there loses its keyboard
+  connection even though the `FocusNode` (owned by the parent) still reports focus. This
+  caused #22: the loose add row's `roundTop` is `looseUnchecked.isEmpty`, which flips
+  exactly once — as the first item is added — so "the keyboard closes when you add an item
+  to an empty list". Fix is to always pass a decoration and use `BorderSide.none` for the
+  no-divider case. Both add rows (`list_screen.dart`, `preset_editor.dart`) do this now.
+  The item rows still use the `? null :` form; harmless today since they hold no focus,
+  but don't put a `TextField` under one. Guarded by `add_item_keyboard_test.dart`, which
+  asserts `tester.testTextInput.isVisible` — the reliable way to test keyboard state.
 - Verifying on Flutter **web** (browser pane): `main.dart` calls
   `SemanticsBinding.instance.ensureSemantics()` so `read_page` sees widgets. Coordinate
   clicks are unreliable (2× display scaling), especially top-bar icons — prefer element

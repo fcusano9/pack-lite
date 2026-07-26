@@ -657,10 +657,21 @@ class _ListScreenState extends State<ListScreen> {
             onTap: active ? null : () => _openAdd(category),
             borderRadius: radius,
             child: Container(
-              decoration: roundTop
-                  ? null
-                  : BoxDecoration(
-                      border: Border(top: BorderSide(color: harbor.line))),
+              // Always pass a decoration, even when there's no divider to draw.
+              // Container inserts a DecoratedBox only when decoration != null,
+              // so flipping between null and non-null changes the depth of the
+              // tree below it — which re-parents the TextField, disposes its
+              // state and drops the keyboard. That flip happens exactly once:
+              // when the first loose item is added, `roundTop` goes true ->
+              // false. Hence "the keyboard closes when adding an item to an
+              // empty list" (#22).
+              decoration: BoxDecoration(
+                border: Border(
+                  top: roundTop
+                      ? BorderSide.none
+                      : BorderSide(color: harbor.line),
+                ),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(

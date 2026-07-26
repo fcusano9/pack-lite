@@ -483,10 +483,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
             onTap: active ? null : () => _openAdd(category),
             borderRadius: radius,
             child: Container(
-              decoration: roundTop
-                  ? null
-                  : BoxDecoration(
-                      border: Border(top: BorderSide(color: harbor.line))),
+              // Always pass a decoration — see the matching comment in
+              // list_screen.dart. A null -> non-null flip changes the tree
+              // depth below Container, disposing the TextField's state and
+              // dropping the keyboard as the first item is added (#22).
+              decoration: BoxDecoration(
+                border: Border(
+                  top: roundTop
+                      ? BorderSide.none
+                      : BorderSide(color: harbor.line),
+                ),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: active
                   ? Row(
