@@ -20,7 +20,8 @@ anywhere, and works fully offline.
   and a live progress bar per list.
 - **Check-off** with haptics and a sound; packed items sink to a "Packed"
   section and a small celebration fires when everything's packed.
-- **Reuse** — duplicate a list, or **uncheck all** to reset it for the next trip.
+- **Reuse** — duplicate a list (the copy starts fully unpacked, ready for the next
+  trip), or **uncheck all** to reset one in place.
 - **Presets** — reusable sets of items (e.g. Toiletries); pour them into any
   list, save a list or category as a preset, or start a new list from presets.
 - **Import / export** all data as a single JSON file for backup or moving phones.

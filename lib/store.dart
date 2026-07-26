@@ -158,6 +158,9 @@ class AppStore extends ChangeNotifier {
     final index = lists.indexWhere((list) => list.id == id);
     if (index == -1) return null;
     final copy = lists[index].copy(newName: '${lists[index].name} copy');
+    // A duplicate exists to be packed again, so it starts fully unpacked.
+    // Inheriting last trip's ticks would mean hunting them down by hand.
+    copy.uncheckAll();
     _mutate(() => lists.insert(index + 1, copy));
     return copy;
   }
@@ -284,18 +287,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void uncheckAll(String listId) {
-    _mutate(() {
-      final list = byId(listId);
-      if (list == null) return;
-      for (final item in list.items) {
-        item.checked = false;
-      }
-      for (final category in list.categories) {
-        for (final item in category.items) {
-          item.checked = false;
-        }
-      }
-    });
+    _mutate(() => byId(listId)?.uncheckAll());
   }
 
   // ---- presets ----
