@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../haptics.dart';
 import '../models.dart';
+import '../motion.dart';
 import '../sheets/category_sheet.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -160,6 +161,8 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
     final harbor = context.harbor;
     showModalBottomSheet<void>(
       context: context,
+      // An action menu, not a form — matches the popup menus' pace.
+      sheetAnimationStyle: Motion.menu,
       builder: (sheetContext) => SafeArea(
         top: false,
         child: Column(

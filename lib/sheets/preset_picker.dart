@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models.dart';
+import '../motion.dart';
 import '../store.dart';
 import '../theme.dart';
 
@@ -10,6 +11,8 @@ import '../theme.dart';
 Future<String?> showPresetPicker(BuildContext context) {
   return showModalBottomSheet<String>(
     context: context,
+    // Pick-one-and-dismiss, so it moves at menu pace rather than form pace.
+    sheetAnimationStyle: Motion.menu,
     builder: (context) {
       final harbor = context.harbor;
       final presets = context.read<AppStore>().presets;

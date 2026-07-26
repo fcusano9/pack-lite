@@ -254,6 +254,14 @@
 - [ ] **THEME-2** **System** mode follows the OS toggle live (flip system dark mode).
 - [ ] **THEME-3** Cobalt is used for actions & in-progress; **green only** for done
   states (All Packed card, completed progress bar, checkmarks).
+- [ ] **THEME-5** **Menus feel snappy** (issue #18). The `···` and **+** popup menus, the
+  long-press category menu (list *and* preset editor), and the **icon** and **preset**
+  pickers all open in ~140ms and dismiss faster still — open and close each a few times in
+  a row, which is where the old 300ms was noticeable. Nothing should flicker, land
+  half-drawn, or drop the first tap.
+- [ ] **THEME-6** By contrast the **New List** and **Category** sheets, and the **Reorder
+  categories** sheet, keep the slower default motion — this is deliberate (see the Harbor
+  motion note in `CLAUDE.md`), not an oversight.
 - [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
   Reinstalling restores the saved theme from the Google account backup, so this only
   reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.

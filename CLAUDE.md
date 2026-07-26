@@ -26,6 +26,9 @@ feature creep.
 - `screens/` — home, list_screen, preset_editor, presets_screen, settings_screen.
 - `sheets/` — new_list, category, icon_picker, preset_picker (bottom sheets).
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
+- `motion.dart` — `Motion.menu`, the shared `AnimationStyle` for menus. Applied via
+  `PopupMenuButton.popUpAnimationStyle` and `showModalBottomSheet(sheetAnimationStyle:)`.
+  **Menus and pickers use it; forms keep Flutter's defaults** — see the Harbor note below.
 - `links.dart` — outbound URLs (repo, GitHub Sponsors) shown in Settings → ABOUT.
   Opened via `url_launcher`; Android needs the `https` VIEW `<intent>` in the manifest's
   `<queries>` or the taps silently do nothing on Android 11+.
@@ -37,6 +40,13 @@ actions + in-progress, GREEN (#199A6D / #2FB985) reserved for "done". Dense rows
 and cards (grown ~25% from the original mockups after on-device testing), modest
 font sizes, device-native emoji for icons. List header uses "option C" (count
 chip in the title row + thin progress bar).
+
+**Motion:** transient surfaces you tap *through* — popup menus, long-press action
+sheets, the icon and preset pickers — use `Motion.menu` (140ms in, 90ms out) instead of
+Flutter's 300ms popup / 250ms sheet defaults, which read as sluggish on repeat use. Exit
+is faster than entry: arriving is information, leaving is just clutter. Surfaces you
+*work in* — the new-list and category **forms**, and the reorder sheet — keep the
+defaults, because a tall sheet snapping in at 140ms reads as a glitch rather than speed.
 
 ## Signing
 `android/app/packlite-release.jks` + `android/key.properties` are git-ignored
