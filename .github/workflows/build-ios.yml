@@ -55,13 +55,11 @@ jobs:
       - name: Build for simulator
         run: flutter build ios --simulator --debug
 
-      # NOTE: `continue-on-error` is set only until this has had one green run —
-      # simulator naming and boot behaviour shift between Xcode versions and this
-      # could not be validated locally (no Xcode). Once it passes, delete the
-      # `continue-on-error` line so a failed launch actually fails the build.
+      # Strict: a launch failure fails the build. Proven green on run 30205883496
+      # (Xcode 26.5, iPhone 16e simulator), so it no longer needs the temporary
+      # non-blocking escape hatch it originally shipped with.
       - name: Launch in a simulator and screenshot it
         id: smoke
-        continue-on-error: true
         run: |
           set -euxo pipefail
           UDID=$(xcrun simctl list devices available --json | python3 -c "
