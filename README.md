@@ -47,3 +47,16 @@ Release builds are signed with a keystore that is **not** in this repo
 (`android/app/packlite-release.jks` and `android/key.properties` are
 git-ignored). Keep a secure backup of the keystore — it's required to publish
 updates that install over existing installs.
+
+## Support
+
+Pack Lite is free, with no ads, no tracking and no in-app purchases — and it
+stays that way. Nothing in the app is gated behind paying.
+
+If it's useful to you and you'd like to help it keep going, you can sponsor
+development at **[github.com/sponsors/fcusano9](https://github.com/sponsors/fcusano9)**
+(also linked under Settings → About).
+
+Sponsoring is entirely optional, and it isn't the only way to help — bug reports
+and feature ideas in [Issues](https://github.com/fcusano9/pack-lite/issues) are
+just as valuable.
