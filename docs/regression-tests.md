@@ -77,10 +77,10 @@
   **Edit List** sheet (no preset chips when editing); changing name/icon updates the
   header and the Home card.
 - [ ] **NEW-8** A list with nothing in it shows the empty state: 📝, the heading
-  **"Start your list"**, and two buttons — **Add item** and **New Category**. There is
-  **no explanatory subtitle** beneath the heading (removed in #17), and the buttons sit
-  directly under it without a gap where the text used to be. Both buttons work: Add item
-  opens the inline field (see ITEM-2), New Category opens the category sheet.
+  **"Start your list"**, the subtitle **"Add items one by one, or group them into
+  categories."**, and two buttons — **Add item** and **New Category**. The subtitle should
+  name both paths and must not read as though setup is required (#17). Both buttons work:
+  Add item opens the inline field (see ITEM-2), New Category opens the category sheet.
 
 ## 4. Items — add / check / rename / delete (P0)
 

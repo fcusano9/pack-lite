@@ -1153,6 +1153,12 @@ class _EmptyList extends StatelessWidget {
               style: TextStyle(
                   fontSize: 15.5, fontWeight: FontWeight.w700, color: harbor.ink),
             ),
+            const SizedBox(height: 6),
+            Text(
+              'Add items one by one, or group them into categories.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: harbor.mut, height: 1.5),
+            ),
             const SizedBox(height: 18),
             Wrap(
               spacing: 10,
