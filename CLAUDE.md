@@ -61,6 +61,43 @@ installs, reviews and ratings). Even before release, changing it makes Android t
 build as an entirely different app — it installs *alongside* the old one rather than over
 it, and none of the existing data carries over, so export first.
 
+## iOS
+**There is no local iOS toolchain** — the Mac has Command Line Tools only, no Xcode, no
+`simctl`, no CocoaPods, so `flutter build ios` cannot run here. The
+**`Build iOS` GitHub Actions workflow is currently the only thing compiling the iOS
+target**: it does a release `--no-codesign` build plus a simulator launch + screenshot, on
+free macOS runners. Check its artifact before claiming anything about iOS.
+
+To build locally, Frank needs to: install Xcode (free, App Store), then
+`sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer` and
+`sudo xcodebuild -runFirstLaunch` (both need his password — you cannot run them), and
+`brew install cocoapods`. Simulator testing needs no Apple account; his own iPhone needs
+only a free Apple ID, but those certificates expire after 7 days. Note his iPhone 12 is a
+**work** phone, so MDM may block dev-signed installs — prefer the simulator.
+
+Already handled, don't "fix" these:
+- `ios/Podfile` is absent because it's generated on the first iOS build. Not a bug.
+- Bundle id is `com.packlite.app`, matching Android (see App identity).
+- All plugins resolve iOS implementations, several via federated packages
+  (`audioplayers_darwin`, `path_provider_foundation`, `shared_preferences_foundation`,
+  `url_launcher_ios`) — an absent `ios/` directory in the top-level package is expected.
+- No `NSxxxUsageDescription` keys are needed: `file_picker` reads JSON through the document
+  picker, and nothing touches camera, mic, photos or location.
+
+Deliberate platform asymmetries:
+- **Haptics.** Android drives the vibrator directly for amplitude control; iOS falls back
+  to `HapticFeedback.*` (see `haptics.dart`), so the Settings strength levels are coarser
+  there. Expected, not a regression.
+- **Sound obeys the iOS silent switch.** `sound.dart` uses
+  `AVAudioSessionCategory.ambient`, so the check-off pop is muted when the ringer switch is
+  off — unlike Android, where the whole point was bypassing system touch-sound settings.
+  This is intentional: `playback` would override the silent switch, which is against
+  platform convention and draws App Review attention.
+- **`BackupSync` is Android-only** and no-ops on iOS via the caught `MissingPluginException`.
+  iOS has no `BackupManager.dataChanged()` equivalent, so the #24 fix has no iOS analogue.
+- The **app icon is still the Flutter placeholder** on both platforms (issue #12), so an
+  iOS test build shows the default Flutter logo.
+
 ## Gotchas (cost us real time — heed these)
 - `compileSdk = 36` is set explicitly in `android/app/build.gradle.kts` (file_picker's
   transitive deps require it). Don't drop it back to the Flutter default.
