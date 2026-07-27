@@ -44,6 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Claude Code — personal, machine-specific state. The permission allowlist in
+# settings.local.json is per-developer; launch.json IS shared, so it stays tracked.
+.claude/settings.local.json
+
 # Android signing — NEVER commit the keystore or its passwords.
 # Keep a separate secure backup of packlite-release.jks; losing it means
 # you can't publish updates that install over existing installs.
