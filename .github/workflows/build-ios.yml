@@ -55,9 +55,7 @@ jobs:
       - name: Build for simulator
         run: flutter build ios --simulator --debug
 
-      # Strict: a launch failure fails the build. Proven green on run 30205883496
-      # (Xcode 26.5, iPhone 16e simulator), so it no longer needs the temporary
-      # non-blocking escape hatch it originally shipped with.
+      # Strict: a launch failure fails the build.
       - name: Launch in a simulator and screenshot it
         id: smoke
         run: |
@@ -81,7 +79,18 @@ jobs:
           # A launch that crashed immediately would still screenshot fine (an
           # empty springboard), so confirm the process is actually still alive
           # rather than trusting that the PNG exists.
-          xcrun simctl spawn "$UDID" launchctl list | grep -q com.packlite.app
+          #
+          # Capture first, then grep. Piping `launchctl list` straight into
+          # `grep -q` makes grep exit on the first match and close the pipe,
+          # which hands the still-writing producer a SIGPIPE; under `pipefail`
+          # that surfaces as exit 141 and fails the step *because the assertion
+          # passed*. Assigning to a variable removes the pipe entirely.
+          RUNNING_PROCESSES=$(xcrun simctl spawn "$UDID" launchctl list)
+          if ! grep -q com.packlite.app <<<"$RUNNING_PROCESSES"; then
+            echo "::error::Pack Lite is not running after launch — it started and then exited."
+            exit 1
+          fi
+          echo "Confirmed com.packlite.app is still running after launch."
 
       - name: Upload iOS build and screenshot
         uses: actions/upload-artifact@v4
