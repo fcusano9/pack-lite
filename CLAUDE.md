@@ -98,6 +98,12 @@ Deliberate platform asymmetries:
 - The **app icon is still the Flutter placeholder** on both platforms (issue #12), so an
   iOS test build shows the default Flutter logo.
 
+## Releasing
+`docs/release-checklist.md` — per-store checklists for Google Play and the App Store.
+Note Play needs an `.aab` (`flutter build appbundle`) and nothing in this repo builds
+one yet, and that build numbers must increase on every upload while every CI build is
+still `versionCode 2005`. Release process stays out of the README by preference.
+
 ## Gotchas (cost us real time — heed these)
 - `compileSdk = 36` is set explicitly in `android/app/build.gradle.kts` (file_picker's
   transitive deps require it). Don't drop it back to the Flutter default.
