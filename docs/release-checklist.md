@@ -26,10 +26,12 @@ Two rules that matter more than they look:
 
 These are hard blockers. Neither store will accept a build without them.
 
-- [ ] **REL-1 · Real app icon** (issue #12). Both stores reject the Flutter
-      placeholder. Needed at every Android mipmap density, plus a 512×512 PNG for
-      the Play listing and a 1024×1024 PNG for App Store Connect. This is the
-      single highest-value backlog item — nothing ships without it.
+- [x] **REL-1 · Real app icon.** *Done 2026-07-27 (#12).* Rolling-suitcase mark with
+      a cut-out check, generated for every Android mipmap density, the adaptive
+      background/foreground layers, and all 21 iOS sizes including the 1024×1024
+      marketing icon with its alpha channel stripped. Sources in `assets/icon/src/`.
+      **Still to do for Play:** export a 512×512 listing icon — the store console
+      wants it uploaded separately, it isn't part of the app bundle.
 - [ ] **REL-2 · Privacy policy, publicly hosted.** Both stores require a URL even
       when the app collects nothing. GitHub Pages on this repo is free and
       sufficient. It must state plainly that Pack Lite stores everything on the
