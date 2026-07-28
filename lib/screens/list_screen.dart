@@ -494,8 +494,13 @@ class _ListScreenState extends State<ListScreen> {
                   showCategorySheet(context, listId: widget.listId),
               onAddPreset: _addPreset,
               onUncheckAll: () => _uncheckAll(list),
-              onCollapseAll: () => setState(() =>
-                  _collapsed.addAll(list.categories.map((category) => category.id))),
+              // The Uncategorized section collapses with everything else — its
+              // key isn't in list.categories, so it has to be added explicitly.
+              onCollapseAll: () => setState(() {
+                _collapsed
+                  ..addAll(list.categories.map((category) => category.id))
+                  ..add(_uncategorizedKey);
+              }),
               onExpandAll: () => setState(_collapsed.clear),
               onSavePreset: () => _saveAsPreset(list),
               onDelete: () => _deleteList(list),
@@ -588,7 +593,12 @@ class _ListScreenState extends State<ListScreen> {
               child: Row(
                 children: [
                   Expanded(
+                    // Align on the text baseline, not the box centre: the name
+                    // and the count are different sizes, and centring their
+                    // boxes leaves the smaller one sitting visibly low.
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
                         if (category?.icon != null) ...[
                           Text(category!.icon!,

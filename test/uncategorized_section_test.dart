@@ -100,6 +100,46 @@ void main() {
     expect(find.text('Socks'), findsOneWidget); // the real category is unaffected
   });
 
+  testWidgets('Collapse All collapses the Uncategorized section too',
+      (tester) async {
+    final store = await _storeWith(_withCategories());
+    await tester.pumpWidget(_wrap(store));
+    await tester.pumpAndSettle();
+    expect(find.text('Snacks'), findsOneWidget); // uncategorized item
+    expect(find.text('Socks'), findsOneWidget); // category item
+
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Collapse All'));
+    await tester.pumpAndSettle();
+
+    // Its key isn't in list.categories, so it was previously left expanded.
+    expect(find.text('Snacks'), findsNothing);
+    expect(find.text('Socks'), findsNothing);
+    expect(find.text('UNCATEGORIZED'), findsOneWidget);
+    expect(find.text('CLOTHES'), findsOneWidget);
+  });
+
+  testWidgets('Expand All restores the Uncategorized section', (tester) async {
+    final store = await _storeWith(_withCategories());
+    await tester.pumpWidget(_wrap(store));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Collapse All'));
+    await tester.pumpAndSettle();
+    expect(find.text('Snacks'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Expand All'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Snacks'), findsOneWidget);
+    expect(find.text('Socks'), findsOneWidget);
+  });
+
   testWidgets('long-pressing Uncategorized opens no category menu',
       (tester) async {
     final store = await _storeWith(_withCategories());
