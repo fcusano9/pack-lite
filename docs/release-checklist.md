@@ -8,6 +8,18 @@ how Pack Lite is currently built.
 (July 2026); re-check anything surprising against the current developer console
 rather than trusting this file.
 
+## Keeping this current
+
+Tick items off as they're genuinely finished, with the **date** and a PR or issue
+reference so the trail is auditable. Also revise any item whose underlying facts have
+changed, not just the boxes.
+
+Two rules that matter more than they look:
+
+- **Never tick something that's only partly done.** Annotate it instead — a half-true
+  tick is how a launch checklist quietly stops being trustworthy.
+- **A stale checklist is worse than no checklist**, because it still gets believed.
+
 ---
 
 ## Blocks both stores
@@ -34,6 +46,9 @@ These are hard blockers. Neither store will accept a build without them.
       `github.run_number` was proposed and never decided.
 - [ ] **REL-6 · Full regression pass** on real hardware — `docs/regression-tests.md`,
       at minimum every P0.
+      *Partial (2026-07-27):* §17 IOS-1, IOS-4 (import only), IOS-5 and IOS-8 pass in the
+      iOS simulator. Android hardware pass not yet done, and IOS-2/IOS-3 need a physical
+      iPhone. Not tickable until the Android P0 sweep is run.
 - [ ] **REL-7 · Screenshots** taken on real devices or simulators, per store sizes
       below. Take them *after* REL-1, or they'll show the placeholder icon.
 
@@ -98,6 +113,13 @@ These are hard blockers. Neither store will accept a build without them.
 
 **Cost:** $99/year, recurring. **Apps are removed if it lapses.**
 
+### Toolchain
+
+- [x] **IOS-REL-0 · Local iOS toolchain.** *Done 2026-07-27.* Xcode 26.6, iOS 26.5
+      simulator runtime, CocoaPods 1.17.0; `flutter doctor` green. The app builds and
+      runs in the simulator, and CI builds it on every PR (#36). Prerequisite for
+      IOS-REL-8.
+
 ### Account and identity
 
 - [ ] **IOS-REL-1** Enrol in the Apple Developer Program ($99/yr). Individual
@@ -120,7 +142,11 @@ These are hard blockers. Neither store will accept a build without them.
 - [ ] **IOS-REL-5** Issue #38 — the vibration helper text is Android-only copy and is
       factually wrong on iOS.
 - [ ] **IOS-REL-6** Work through `docs/regression-tests.md` §17 on a **real iPhone**.
-      IOS-2 (haptics) and IOS-3 (ringer switch) cannot be checked in a simulator.
+      IOS-2 (haptics) and IOS-3 (ringer switch) cannot be checked in a simulator, and
+      no physical device is set up — Frank's iPhone 12 is a work phone where MDM may
+      block Developer Mode, making TestFlight (IOS-REL-13) the more likely route.
+      *Simulator coverage so far (2026-07-27):* IOS-1, IOS-4 import, IOS-5, IOS-8 pass;
+      IOS-4 export fails (#37).
 
 ### Build and upload
 

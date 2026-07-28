@@ -62,18 +62,24 @@ build as an entirely different app — it installs *alongside* the old one rathe
 it, and none of the existing data carries over, so export first.
 
 ## iOS
-**There is no local iOS toolchain** — the Mac has Command Line Tools only, no Xcode, no
-`simctl`, no CocoaPods, so `flutter build ios` cannot run here. The
-**`Build iOS` GitHub Actions workflow is currently the only thing compiling the iOS
-target**: it does a release `--no-codesign` build plus a simulator launch + screenshot, on
-free macOS runners. Check its artifact before claiming anything about iOS.
+**The local iOS toolchain works** (since 2026-07-27): Xcode 26.6, iOS 26.5 simulator
+runtime, CocoaPods 1.17.0, `flutter doctor` green. You can build and run iOS locally:
 
-To build locally, Frank needs to: install Xcode (free, App Store), then
-`sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer` and
-`sudo xcodebuild -runFirstLaunch` (both need his password — you cannot run them), and
-`brew install cocoapods`. Simulator testing needs no Apple account; his own iPhone needs
-only a free Apple ID, but those certificates expire after 7 days. Note his iPhone 12 is a
-**work** phone, so MDM may block dev-signed installs — prefer the simulator.
+```
+flutter build ios --simulator --debug     # then install/launch via simctl
+flutter run -d <simulator-udid>           # attaches the Dart console
+```
+
+The first build takes ~2 minutes and resolves plugins via **Swift Package Manager**, not
+CocoaPods. The `Build iOS` GitHub Actions workflow still does the same thing on every PR
+(release `--no-codesign`, plus a simulator launch and screenshot artifact), so it remains
+the check that catches iOS regressions without anyone remembering to look.
+
+**No physical device is set up**, and the simulator tooling cannot drive one. Frank's
+iPhone 12 is a **work** phone, so MDM may block Developer Mode and dev-signed installs
+entirely — TestFlight is the more likely route there. Free-provisioning certificates
+expire after 7 days. That leaves IOS-2 (haptics) and IOS-3 (ringer switch) untestable
+for now, since neither has a simulator equivalent.
 
 Already handled, don't "fix" these:
 - `ios/Podfile` is absent because it's generated on the first iOS build. Not a bug.
@@ -103,6 +109,11 @@ Deliberate platform asymmetries:
 Note Play needs an `.aab` (`flutter build appbundle`) and nothing in this repo builds
 one yet, and that build numbers must increase on every upload while every CI build is
 still `versionCode 2005`. Release process stays out of the README by preference.
+
+**Keep it current.** Tick items off as they're genuinely finished, with the date and a
+PR or issue reference, and update any item whose facts have changed. A checklist that
+lags reality is worse than none, because it still gets trusted. Never tick something
+that's only partly done — annotate it instead.
 
 ## Gotchas (cost us real time — heed these)
 - `compileSdk = 36` is set explicitly in `android/app/build.gradle.kts` (file_picker's
@@ -148,6 +159,8 @@ still `versionCode 2005`. Release process stays out of the README by preference.
   restart** (hot reload won't recompile the web entry).
 
 ## Testing target
-Frank's phone is a Samsung Galaxy S25 Ultra (APK sideload). No Xcode on the Mac yet,
-so iOS builds aren't possible. Verify previewable changes in the web preview and
-share a screenshot before calling something done.
+Frank's phone is a Samsung Galaxy S25 Ultra (APK sideload) — the only hardware anything
+has actually been tested on. iOS runs in the **simulator** locally and in CI (see iOS
+above), but no physical iPhone is set up. Verify previewable changes and share a
+screenshot before calling something done; headless widget tests are the trusted stack,
+the web preview is the fallback.
