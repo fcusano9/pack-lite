@@ -22,6 +22,11 @@
 - [ ] **SMK-10** Force-kill the app and relaunch — all changes from this session persisted.
 - [ ] **SMK-11** The launcher shows the app as **"Pack Lite"** under its icon — not
   "pack_lite" or "packlite". Check this on the home screen and in Settings → Apps.
+- [ ] **SMK-12** The launcher icon is the **rolling suitcase with a green cut-out check**
+  on a cobalt gradient — not the Flutter placeholder (#12). On Android confirm it fills
+  its mask properly (no white plate behind it, nothing clipped) under whichever icon
+  shape the launcher uses; a shrunken-looking icon means the adaptive foreground got
+  double-inset — see the App icon note in `CLAUDE.md`.
 
 ---
 
