@@ -361,10 +361,16 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
               child: Row(
                 children: [
                   Expanded(
+                    // Baseline, not centre — see the matching note in
+                    // list_screen.dart. Keeps these headers identical to the
+                    // list screen's, since they're meant to read as the same
+                    // component.
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
                         if (category.icon != null) ...[
-                          Text(category.icon!, style: const TextStyle(fontSize: 13)),
+                          Text(category.icon!, style: const TextStyle(fontSize: 14.5)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
@@ -372,15 +378,17 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.7,
                                   color: harbor.mut)),
                         ),
                         const SizedBox(width: 6),
+                        // Same size as the name — see the note in
+                        // list_screen.dart on why a smaller count reads low.
                         Text('· ${category.items.length}',
                             style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: harbor.mut)),
                       ],
@@ -390,7 +398,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                     turns: collapsed ? -0.25 : 0,
                     duration: const Duration(milliseconds: 180),
                     child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 17, color: harbor.mut),
+                        size: 18, color: harbor.mut),
                   ),
                 ],
               ),

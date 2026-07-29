@@ -33,6 +33,12 @@ feature creep.
   Opened via `url_launcher`; Android needs the `https` VIEW `<intent>` in the manifest's
   `<queries>` or the taps silently do nothing on Android 11+.
 - Preset→list merge rule: same-name categories merge; duplicate item names skipped.
+- **Loose items are rendered as an "Uncategorized" section** once a list has real
+  categories, so every group looks alike (#35); a list with no categories stays flat and
+  header-less. `_CategoryHeaderRow.category` and `_PackedLabelRow.category` are nullable,
+  with null meaning Uncategorized — which the reorder handler already reads as the loose
+  bucket, so drag/drop needed no change. Collapse state uses the `_uncategorizedKey`
+  sentinel, and long-press opens no menu since there's no real category to act on.
 
 ## Harbor design language
 Cool grey-blue neutrals, ONE cobalt accent (#2251CC light / #5B82F0 dark) for
