@@ -384,9 +384,11 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                                   color: harbor.mut)),
                         ),
                         const SizedBox(width: 6),
+                        // Same size as the name — see the note in
+                        // list_screen.dart on why a smaller count reads low.
                         Text('· ${category.items.length}',
                             style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                                 color: harbor.mut)),
                       ],

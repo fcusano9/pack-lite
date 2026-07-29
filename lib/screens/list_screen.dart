@@ -621,8 +621,13 @@ class _ListScreenState extends State<ListScreen> {
                         const SizedBox(width: 6),
                         Text(
                           '· $packed of $total',
+                          // Same size as the name on purpose. Baselines align
+                          // either way, but a smaller count has a shorter cap
+                          // height, so its glyph tops sit lower and the whole
+                          // thing reads as dropped. Weight carries the
+                          // hierarchy instead.
                           style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                               color: harbor.mut),
                         ),
