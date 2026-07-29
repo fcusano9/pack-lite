@@ -370,7 +370,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         if (category.icon != null) ...[
-                          Text(category.icon!, style: const TextStyle(fontSize: 14)),
+                          Text(category.icon!, style: const TextStyle(fontSize: 14.5)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
@@ -378,7 +378,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.7,
                                   color: harbor.mut)),
@@ -388,7 +388,7 @@ class _PresetEditorScreenState extends State<PresetEditorScreen> {
                         // list_screen.dart on why a smaller count reads low.
                         Text('· ${category.items.length}',
                             style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: harbor.mut)),
                       ],

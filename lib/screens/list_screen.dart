@@ -602,7 +602,7 @@ class _ListScreenState extends State<ListScreen> {
                       children: [
                         if (category?.icon != null) ...[
                           Text(category!.icon!,
-                              style: const TextStyle(fontSize: 14)),
+                              style: const TextStyle(fontSize: 14.5)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
@@ -611,7 +611,7 @@ class _ListScreenState extends State<ListScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.7,
                               color: harbor.mut,
@@ -627,7 +627,7 @@ class _ListScreenState extends State<ListScreen> {
                           // thing reads as dropped. Weight carries the
                           // hierarchy instead.
                           style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: harbor.mut),
                         ),
