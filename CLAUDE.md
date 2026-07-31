@@ -121,6 +121,12 @@ recovered by rendering on white *and* black and solving for it; and the foregrou
 must **not** be pre-scaled, because `ic_launcher.xml` already applies a 16% inset and the
 two compound.
 
+Six PNGs are generated, all derived from the one SVG: the master, the two Android
+adaptive layers, **iOS 18 dark and tinted** (#47), and the **Android 13+ themed**
+monochrome layer (#48). The monochrome one strips `class="depth"` and `class="panel"`
+elements — Android tints by alpha alone, so leaving the green panel in would fill the
+check knockout and lose the mark. Keep those classes on the shapes.
+
 ## Releasing
 `docs/release-checklist.md` — per-store checklists for Google Play and the App Store.
 Note Play needs an `.aab` (`flutter build appbundle`) and nothing in this repo builds

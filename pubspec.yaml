@@ -111,6 +111,13 @@ flutter_launcher_icons:
   # iOS rejects icons with an alpha channel; the master carries one because the
   # renderer always emits RGBA, so strip it on the way out.
   remove_alpha_ios: true
+  # iOS 18 dark and tinted variants (#47). Both are transparent — the system
+  # composites its own backdrop and, for tinted, applies the user's colour.
+  image_path_ios_dark_transparent: "assets/icon/icon_dark.png"
+  image_path_ios_tinted_grayscale: "assets/icon/icon_tinted.png"
   adaptive_icon_background: "assets/icon/icon_background.png"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  # Android 13+ themed icons (#48): a flat silhouette the launcher recolours
+  # from the wallpaper palette. Only its alpha is used.
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"
   min_sdk_android: 21

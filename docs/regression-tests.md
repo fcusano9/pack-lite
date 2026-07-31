@@ -27,6 +27,16 @@
   its mask properly (no white plate behind it, nothing clipped) under whichever icon
   shape the launcher uses; a shrunken-looking icon means the adaptive foreground got
   double-inset — see the App icon note in `CLAUDE.md`.
+- [ ] **SMK-13** **iOS 18 dark and tinted icons** (#47). Switch the phone to dark mode:
+  the icon loses its cobalt background and sits on the system's dark backdrop, like
+  Apple's own apps. Then Settings → Home Screen & App Library → **Tinted**: the icon
+  turns monochrome and takes the chosen colour. Neither should show a cobalt square,
+  which is what an unconfigured icon looks like.
+- [ ] **SMK-14** **Android themed icon** (#48). With themed icons on (Settings →
+  Wallpaper & style → Themed icons, Android 13+), the icon becomes a flat silhouette in
+  the wallpaper palette, **with the check still visible as a hole** through the case. If
+  the check vanishes, the green panel is being included in the monochrome layer — see
+  `assets/icon/src/README.md`.
 
 ---
 

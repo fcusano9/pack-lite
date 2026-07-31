@@ -46,8 +46,16 @@ OUT = SRC.parent
 
 # ---- SVG variants -----------------------------------------------------------
 
-def _variant(backdrop_fill: str | None, keep_art: bool) -> bytes:
-    """Re-emit the source SVG with the backdrop recoloured and/or art removed."""
+def _variant(backdrop_fill: str | None = None, keep_art: bool = True,
+             drop_backdrop: bool = False, silhouette: bool = False) -> bytes:
+    """Re-emit the source SVG with the backdrop and art adjusted.
+
+    [backdrop_fill] recolours the backdrop; None leaves it as authored.
+    [drop_backdrop] removes it entirely, for the transparent variants.
+    [silhouette] flattens the art to one solid colour for Android's themed
+    icons, which tint a shape by its alpha. Shading and the green panel are
+    dropped: the panel would fill the knockout and swallow the check.
+    """
     ElementTree.register_namespace('', SVG_NS)
     tree = ElementTree.parse(SRC / 'icon.svg')
     root = tree.getroot()
@@ -57,10 +65,25 @@ def _variant(backdrop_fill: str | None, keep_art: bool) -> bytes:
     if backdrop is None or art is None:
         sys.exit('icon.svg must keep the ids "backdrop" and "art" — see its header comment.')
 
-    if backdrop_fill is not None:
+    if drop_backdrop:
+        root.remove(backdrop)
+    elif backdrop_fill is not None:
         backdrop.set('fill', backdrop_fill)
     if not keep_art:
         root.remove(art)
+        return ElementTree.tostring(root, encoding='utf-8')
+
+    if silhouette:
+        for element in list(art):
+            classes = element.get('class', '').split()
+            if 'depth' in classes or 'panel' in classes:
+                art.remove(element)
+            else:
+                # Only alpha survives tinting, so the colour is arbitrary —
+                # but it must be uniform or the shapes read at different
+                # weights once the launcher recolours them.
+                element.set('fill', '#FFFFFF')
+                element.attrib.pop('opacity', None)
 
     return ElementTree.tostring(root, encoding='utf-8')
 
@@ -180,6 +203,20 @@ def unmatte(white_path: Path, black_path: Path, out_path: Path) -> None:
     print(f'  {out_path.name}  ({100 * transparent / (width * height):.0f}% transparent)')
 
 
+def greyscale(src_path: Path, out_path: Path) -> None:
+    """Desaturate in place, preserving alpha (Rec. 709 luma)."""
+    width, height, channels, pixels = read_png(src_path)
+    out = bytearray(width * height * 4)
+    for i in range(width * height):
+        p = pixels[i * channels:i * channels + channels]
+        luma = (p[0] * 54 + p[1] * 183 + p[2] * 19) >> 8
+        luma = max(0, min(255, luma))
+        out[i * 4] = out[i * 4 + 1] = out[i * 4 + 2] = luma
+        out[i * 4 + 3] = p[3] if channels == 4 else 255
+    write_rgba_png(out_path, width, height, out)
+    print(f'  {out_path.name}  (greyscale)')
+
+
 def main() -> None:
     if not shutil.which('qlmanage'):
         sys.exit('qlmanage not found — this build only runs on macOS.')
@@ -195,12 +232,34 @@ def main() -> None:
             shutil.copy(rasterise(svg, work, name), dest)
             print(f'  {dest.name}')
 
-        # The foreground needs real transparency, so render twice and solve.
-        # NOTE: do not scale the art here — ic_launcher.xml already applies a
-        # 16% inset, and scaling as well compounds the two (see README).
-        white = rasterise(_variant('#FFFFFF', keep_art=True), work, 'fg_white')
-        black = rasterise(_variant('#000000', keep_art=True), work, 'fg_black')
-        unmatte(white, black, OUT / 'icon_foreground.png')
+        # Everything below needs real transparency, so each is rendered twice
+        # — on white and on black — and the alpha solved from the pair.
+        #
+        # NOTE: do not scale the art. ic_launcher.xml already applies a 16%
+        # inset, and scaling as well compounds the two (see README).
+        for name, dest, kwargs in (
+            # Android adaptive foreground.
+            ('fg', OUT / 'icon_foreground.png', {}),
+            # Android 13+ themed icon: a flat silhouette the launcher tints
+            # from the user's wallpaper palette.
+            ('mono', OUT / 'icon_monochrome.png', {'silhouette': True}),
+        ):
+            white = rasterise(
+                _variant('#FFFFFF', **kwargs), work, f'{name}_white')
+            black = rasterise(
+                _variant('#000000', **kwargs), work, f'{name}_black')
+            unmatte(white, black, dest)
+
+    # iOS 18 dark is the same mark on transparency — Apple composites its own
+    # dark backdrop — which is exactly the adaptive foreground. Copied rather
+    # than re-rendered; split them if the dark variant ever needs its own
+    # treatment (a toned-down shell, say).
+    shutil.copy(OUT / 'icon_foreground.png', OUT / 'icon_dark.png')
+    print(f'  {(OUT / "icon_dark.png").name}  (copy of the foreground)')
+
+    # iOS 18 tinted: greyscale of that. The system applies the user's tint, so
+    # any colour left in would fight it.
+    greyscale(OUT / 'icon_dark.png', OUT / 'icon_tinted.png')
 
     print('\nNow run:  dart run flutter_launcher_icons')
 
