@@ -8,10 +8,11 @@ import 'package:pack_lite/screens/list_screen.dart';
 import 'package:pack_lite/store.dart';
 import 'package:pack_lite/theme.dart';
 
-/// Loose items get an "Uncategorized" header once a list has real categories,
-/// so every group looks alike (#35) — but a list with no categories stays a
-/// flat, header-less checklist. That conditional is the whole feature, so both
-/// sides of it are pinned here.
+/// A list either has **no categories** (a flat checklist of loose items) or
+/// **categories and no loose items** — the moment a flat list gains a category
+/// its loose items become a real "Uncategorized" category (#46). That makes it
+/// an ordinary category: renameable, reorderable, deletable, with no special
+/// case anywhere in the UI.
 Widget _wrap(AppStore store) => ChangeNotifierProvider<AppStore>.value(
       value: store,
       child: MaterialApp(
@@ -29,157 +30,154 @@ Future<AppStore> _storeWith(PackingList list) async {
   return store;
 }
 
-PackingList _withCategories({bool looseItems = true, bool loosePacked = false}) =>
-    PackingList(
+PackingList _flatList() => PackingList(
       id: 'x',
       name: 'Trip',
       icon: '🧳',
       items: [
-        if (looseItems) Item(id: 'l1', name: 'Snacks'),
-        if (loosePacked) Item(id: 'l2', name: 'Passport', checked: true),
-      ],
-      categories: [
-        PackCategory(id: 'c1', name: 'Clothes', items: [
-          Item(id: 'c1i1', name: 'Socks'),
-        ]),
+        Item(id: 'l1', name: 'Snacks'),
+        Item(id: 'l2', name: 'Passport', checked: true),
       ],
     );
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('a flat list has NO Uncategorized header', (tester) async {
-    final store = await _storeWith(PackingList(
-      id: 'x',
-      name: 'Trip',
-      icon: '🧳',
-      items: [Item(id: 'l1', name: 'Snacks')],
-    ));
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
+  group('the invariant', () {
+    test('adding the first category absorbs loose items', () async {
+      final store = await _storeWith(_flatList());
 
-    expect(find.text('Snacks'), findsOneWidget);
-    expect(find.text('UNCATEGORIZED'), findsNothing);
+      store.addCategory('x', 'Clothes', null);
+
+      final list = store.byId('x')!;
+      expect(list.items, isEmpty, reason: 'no loose items alongside categories');
+      expect(list.categories.first.name, AppStore.uncategorizedName);
+      expect(list.categories.first.items.map((item) => item.name),
+          ['Snacks', 'Passport']);
+      expect(list.categories.last.name, 'Clothes');
+      // Nothing is lost or silently unpacked in the move.
+      expect(list.totalItems, 2);
+      expect(list.packedItems, 1);
+    });
+
+    test('a flat list is left alone', () async {
+      final store = await _storeWith(_flatList());
+      final list = store.byId('x')!;
+
+      expect(list.items.length, 2);
+      expect(list.categories, isEmpty);
+    });
+
+    test('a second category does not create another Uncategorized', () async {
+      final store = await _storeWith(_flatList());
+      store.addCategory('x', 'Clothes', null);
+      store.addCategory('x', 'Tech', null);
+
+      final list = store.byId('x')!;
+      expect(
+          list.categories
+              .where((c) => c.name == AppStore.uncategorizedName)
+              .length,
+          1);
+      expect(list.categories.length, 3);
+    });
+
+    test('legacy data with both is normalised on load', () async {
+      // Pre-#46 documents could hold loose items *and* categories.
+      SharedPreferences.setMockInitialValues({
+        'flutter.packlite.data': '''
+        {"v":1,"lists":[{"id":"x","name":"Trip","icon":"🧳",
+          "items":[{"id":"a","name":"Loose","checked":false}],
+          "categories":[{"id":"c","name":"Clothes","items":[]}]}],"presets":[]}
+        '''
+      });
+      final store = AppStore();
+      await store.load();
+
+      final list = store.byId('x')!;
+      expect(list.items, isEmpty);
+      expect(list.categories.first.name, AppStore.uncategorizedName);
+      expect(list.categories.first.items.single.name, 'Loose');
+    });
   });
 
-  testWidgets('loose items get an Uncategorized header once categories exist',
-      (tester) async {
-    final store = await _storeWith(_withCategories());
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
+  group('it behaves like any other category', () {
+    Future<AppStore> categorised() async {
+      final store = await _storeWith(_flatList());
+      store.addCategory('x', 'Clothes', null);
+      return store;
+    }
 
-    expect(find.text('UNCATEGORIZED'), findsOneWidget);
-    expect(find.text('CLOTHES'), findsOneWidget);
-    expect(find.text('Snacks'), findsOneWidget);
-    // It carries a count like any other section.
-    expect(find.text('· 0 of 1'), findsNWidgets(2));
-  });
+    testWidgets('it renders as a normal header', (tester) async {
+      final store = await categorised();
+      await tester.pumpWidget(_wrap(store));
+      await tester.pumpAndSettle();
 
-  testWidgets('no Uncategorized header when there are no loose items',
-      (tester) async {
-    final store = await _storeWith(_withCategories(looseItems: false));
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
+      expect(find.text('UNCATEGORIZED'), findsWidgets);
+      expect(find.text('CLOTHES'), findsOneWidget);
+      expect(find.text('Snacks'), findsOneWidget);
+    });
 
-    expect(find.text('CLOTHES'), findsOneWidget);
-    expect(find.text('UNCATEGORIZED'), findsNothing);
-  });
+    testWidgets('it can be renamed', (tester) async {
+      final store = await categorised();
+      final id = store.byId('x')!.categories.first.id;
 
-  testWidgets('tapping the Uncategorized header collapses its items',
-      (tester) async {
-    final store = await _storeWith(_withCategories());
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
-    expect(find.text('Snacks'), findsOneWidget);
+      store.updateCategory('x', id, name: 'Odds & Ends');
 
-    await tester.tap(find.text('UNCATEGORIZED'));
-    await tester.pumpAndSettle();
+      expect(store.byId('x')!.categories.first.name, 'Odds & Ends');
+      await tester.pumpWidget(_wrap(store));
+      await tester.pumpAndSettle();
+      // Twice: the section header and the packed-group label, since this list
+      // has a packed item — exactly how any other category renders.
+      expect(find.text('ODDS & ENDS'), findsNWidgets(2));
+      expect(find.text('UNCATEGORIZED'), findsNothing);
+    });
 
-    expect(find.text('Snacks'), findsNothing);
-    expect(find.text('UNCATEGORIZED'), findsOneWidget); // header stays
-    expect(find.text('Socks'), findsOneWidget); // the real category is unaffected
-  });
+    test('it can be reordered', () async {
+      final store = await categorised();
+      expect(store.byId('x')!.categories.first.name, AppStore.uncategorizedName);
 
-  testWidgets('Collapse All collapses the Uncategorized section too',
-      (tester) async {
-    final store = await _storeWith(_withCategories());
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
-    expect(find.text('Snacks'), findsOneWidget); // uncategorized item
-    expect(find.text('Socks'), findsOneWidget); // category item
+      store.reorderCategories('x', 0, 1);
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Collapse All'));
-    await tester.pumpAndSettle();
+      expect(store.byId('x')!.categories.last.name, AppStore.uncategorizedName);
+    });
 
-    // Its key isn't in list.categories, so it was previously left expanded.
-    expect(find.text('Snacks'), findsNothing);
-    expect(find.text('Socks'), findsNothing);
-    expect(find.text('UNCATEGORIZED'), findsOneWidget);
-    expect(find.text('CLOTHES'), findsOneWidget);
-  });
+    test('it can be deleted', () async {
+      final store = await categorised();
+      final id = store.byId('x')!.categories.first.id;
 
-  testWidgets('Expand All restores the Uncategorized section', (tester) async {
-    final store = await _storeWith(_withCategories());
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
+      store.deleteCategory('x', id);
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Collapse All'));
-    await tester.pumpAndSettle();
-    expect(find.text('Snacks'), findsNothing);
+      final list = store.byId('x')!;
+      expect(list.categories.map((c) => c.name), ['Clothes']);
+      expect(list.items, isEmpty, reason: 'deleted, not dropped back to loose');
+    });
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Expand All'));
-    await tester.pumpAndSettle();
+    testWidgets('long-press opens the category menu', (tester) async {
+      final store = await categorised();
+      await tester.pumpWidget(_wrap(store));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Snacks'), findsOneWidget);
-    expect(find.text('Socks'), findsOneWidget);
-  });
+      await tester.longPress(find.text('UNCATEGORIZED').first);
+      await tester.pumpAndSettle();
 
-  testWidgets('long-pressing Uncategorized opens no category menu',
-      (tester) async {
-    final store = await _storeWith(_withCategories());
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
+      // Previously suppressed because there was no real category behind it.
+      expect(find.text('Rename & icon'), findsOneWidget);
+      expect(find.text('Delete category'), findsOneWidget);
+    });
 
-    await tester.longPress(find.text('UNCATEGORIZED'));
-    await tester.pumpAndSettle();
+    testWidgets('Collapse All includes it', (tester) async {
+      final store = await categorised();
+      await tester.pumpWidget(_wrap(store));
+      await tester.pumpAndSettle();
+      expect(find.text('Snacks'), findsOneWidget);
 
-    // There's no real category behind it, so rename/delete must not be offered.
-    expect(find.text('Rename & icon'), findsNothing);
-    expect(find.text('Delete category'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Collapse All'));
+      await tester.pumpAndSettle();
 
-  testWidgets('packed loose items are labelled only when categories exist',
-      (tester) async {
-    final store = await _storeWith(
-        _withCategories(looseItems: false, loosePacked: true));
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
-
-    // Twice: the section header (which stays even when everything in it is
-    // packed, exactly as a real category header does) and the packed-group
-    // label, so those items don't read as belonging to the category above.
-    expect(find.text('Passport'), findsOneWidget);
-    expect(find.text('UNCATEGORIZED'), findsNWidgets(2));
-  });
-
-  testWidgets('a flat list leaves its packed items unlabelled', (tester) async {
-    final store = await _storeWith(PackingList(
-      id: 'x',
-      name: 'Trip',
-      icon: '🧳',
-      items: [Item(id: 'l2', name: 'Passport', checked: true)],
-    ));
-    await tester.pumpWidget(_wrap(store));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Passport'), findsOneWidget);
-    expect(find.text('UNCATEGORIZED'), findsNothing);
+      expect(find.text('Snacks'), findsNothing);
+    });
   });
 }
