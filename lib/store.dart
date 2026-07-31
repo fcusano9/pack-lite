@@ -70,6 +70,12 @@ class AppStore extends ChangeNotifier {
         lists.insertAll(0, newLists);
         presets.addAll(newPresets);
       }
+      // Stored or imported data predating #46 can hold both loose items and
+      // categories; normalise it so the rest of the app can rely on the
+      // invariant rather than re-checking for it.
+      for (final list in lists) {
+        _absorbLooseItems(list);
+      }
       return (newLists.length, newPresets.length);
     } catch (_) {
       return null;
@@ -190,9 +196,45 @@ class AppStore extends ChangeNotifier {
     return null;
   }
 
+  /// The name given to loose items when a flat list gains its first category.
+  static const uncategorizedName = 'Uncategorized';
+
+  /// Enforces the invariant that a list either has **no categories** (a flat
+  /// checklist of loose items) or **has categories and no loose items**.
+  ///
+  /// The moment a flat list gains a category, its loose items are absorbed into
+  /// a real category named [uncategorizedName]. That makes "Uncategorized" an
+  /// ordinary category — renameable, reorderable, deletable (#46) — instead of
+  /// a special case the UI has to model separately.
+  ///
+  /// Call inside a `_mutate`; it doesn't notify on its own.
+  void _absorbLooseItems(PackingList? list) {
+    if (list == null || list.items.isEmpty || list.categories.isEmpty) return;
+    final existing = list.categories
+        .where((category) =>
+            category.name.toLowerCase() == uncategorizedName.toLowerCase())
+        .firstOrNull;
+    if (existing != null) {
+      existing.items.addAll(list.items);
+    } else {
+      // First, so the items stay where the user last saw them: above the
+      // categories, in their original order.
+      list.categories.insert(
+          0,
+          PackCategory(
+              id: newId(), name: uncategorizedName, items: [...list.items]));
+    }
+    list.items.clear();
+  }
+
   PackCategory addCategory(String listId, String name, String? icon) {
     final category = PackCategory(id: newId(), name: name, icon: icon);
-    _mutate(() => byId(listId)?.categories.add(category));
+    _mutate(() {
+      final list = byId(listId);
+      if (list == null) return;
+      list.categories.add(category);
+      _absorbLooseItems(list);
+    });
     return category;
   }
 
@@ -442,6 +484,8 @@ class AppStore extends ChangeNotifier {
           }
         }
       }
+      // A preset can hand a flat list its first category.
+      _absorbLooseItems(list);
     });
   }
 

@@ -33,12 +33,14 @@ feature creep.
   Opened via `url_launcher`; Android needs the `https` VIEW `<intent>` in the manifest's
   `<queries>` or the taps silently do nothing on Android 11+.
 - Preset→list merge rule: same-name categories merge; duplicate item names skipped.
-- **Loose items are rendered as an "Uncategorized" section** once a list has real
-  categories, so every group looks alike (#35); a list with no categories stays flat and
-  header-less. `_CategoryHeaderRow.category` and `_PackedLabelRow.category` are nullable,
-  with null meaning Uncategorized — which the reorder handler already reads as the loose
-  bucket, so drag/drop needed no change. Collapse state uses the `_uncategorizedKey`
-  sentinel, and long-press opens no menu since there's no real category to act on.
+- **Invariant: a list has either no categories, or categories and no loose items.**
+  `AppStore._absorbLooseItems` folds loose items into a real category named
+  `Uncategorized` the instant a list gains its first one (#46), so that section is an
+  ordinary `PackCategory` — renameable, reorderable, deletable — with no special case in
+  the UI. It runs on `addCategory`, `addPresetToList`, and on load/import (older documents
+  can hold both). `_buildRows` still renders a header-less loose section when
+  `items.isNotEmpty`, purely as a safety net so items can never become invisible if the
+  invariant is somehow broken; in normal operation that only fires on a flat list.
 
 ## Harbor design language
 Cool grey-blue neutrals, ONE cobalt accent (#2251CC light / #5B82F0 dark) for

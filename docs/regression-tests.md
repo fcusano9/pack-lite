@@ -147,24 +147,24 @@
 
 - [ ] **LOOSE-1** A list with **no categories** is a flat checklist — its items sit in a
   header-less section with just an Add item row.
-- [ ] **LOOSE-2** Once the list has **at least one category**, loose items sit under an
-  **UNCATEGORIZED** header at the top, styled exactly like a category header — count
-  chip, collapse chevron, its own Add item row (#35). With **no** categories there is no
-  header at all (LOOSE-1).
-- [ ] **LOOSE-3** In **PACKED**, packed loose items are labelled **UNCATEGORIZED** when
-  the list has categories, and left **unlabelled** when it doesn't — so a flat list never
-  shows the word.
+- [ ] **LOOSE-2** Adding the **first category** to a flat list moves its loose items into
+  a real category named **Uncategorized**, placed first, in their original order and with
+  their packed state intact (#46). Nothing should appear to move or reset.
+- [ ] **LOOSE-3** In **PACKED**, packed items from that category are labelled
+  **UNCATEGORIZED** like any other. A flat list's packed items stay unlabelled.
 - [ ] **LOOSE-4** The **PACKED · N** header collapses/hides all packed items and can be
   expanded again. *(Rendering guarded by `loose_items_test.dart`.)*
-- [ ] **LOOSE-5** Tapping **UNCATEGORIZED** collapses and expands it like any category,
-  independently of the real ones. Long-pressing it opens **no menu** — there's no real
-  category behind it to rename, delete or reorder.
-- [ ] **LOOSE-6** Items drag **into and out of** the Uncategorized section exactly as they
-  do between categories. *(Rendering and collapse guarded by
-  `uncategorized_section_test.dart`; dragging is manual-only.)*
-- [ ] **LOOSE-7** The Uncategorized header **stays visible when everything in it is
-  packed** (showing e.g. `· 2 of 2` with only its Add item row beneath), matching how a
-  fully packed category header behaves.
+- [ ] **LOOSE-5** **Uncategorized is an ordinary category** (#46): long-press offers
+  **Rename & icon**, **Reorder categories**, **Save as preset** and **Delete category**,
+  and each works. Renaming it away means the name is simply gone — no section reappears.
+- [ ] **LOOSE-6** It collapses with **Collapse All**, reorders among the other categories,
+  and items drag into and out of it like any other. *(Store behaviour and the menu are
+  guarded by `uncategorized_section_test.dart`; dragging is manual-only.)*
+- [ ] **LOOSE-7** Its header **stays visible when everything in it is packed** (`· 2 of 2`
+  with only the Add item row beneath), like any fully packed category.
+- [ ] **LOOSE-8** A list that already held loose items **and** categories before this
+  change (an older backup, say) is tidied on **import**: the loose items land in
+  Uncategorized rather than disappearing.
 
 ## 7. Completion moment (P1)
 

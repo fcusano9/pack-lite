@@ -29,24 +29,14 @@ class ListScreen extends StatefulWidget {
 
 // ---- row model for the single flattened reorderable list ----
 
-/// Collapse-state key for the Uncategorized section, which has no category id
-/// of its own. Real ids come from `newId()` (base-36 digits), so a key with
-/// underscores can never collide with one.
-const _uncategorizedKey = '__uncategorized__';
-
 sealed class _Row {
   const _Row(this.key);
   final String key;
 }
 
-/// A section header. [category] is null for the **Uncategorized** section — the
-/// loose items shown with a header once the list has real categories, so they
-/// don't look like a different kind of thing (#35). A list with no categories
-/// stays flat and header-less, so it never produces one of these with null.
 class _CategoryHeaderRow extends _Row {
-  _CategoryHeaderRow(this.category)
-      : super('header-${category?.id ?? _uncategorizedKey}');
-  final PackCategory? category;
+  _CategoryHeaderRow(this.category) : super('header-${category.id}');
+  final PackCategory category;
 }
 
 /// An item row. [category] is null for loose items (not in any category).
@@ -73,12 +63,9 @@ class _PackedHeaderRow extends _Row {
   final int count;
 }
 
-/// A label above a group of packed items. [category] is null for the
-/// Uncategorized group, which is only labelled when the list has categories.
 class _PackedLabelRow extends _Row {
-  _PackedLabelRow(this.category)
-      : super('pl-${category?.id ?? _uncategorizedKey}');
-  final PackCategory? category;
+  _PackedLabelRow(this.category) : super('pl-${category.id}');
+  final PackCategory category;
 }
 
 /// A packed (checked) item row. [category] is null for loose packed items.
@@ -357,28 +344,17 @@ class _ListScreenState extends State<ListScreen> {
 
     // Loose section at the top. Shown when there are loose items or the list
     // has no categories at all (so a flat list always has its add row).
+    // The store folds loose items into a real "Uncategorized" category as soon
+    // as a list gains one (#46), so in practice this section only appears on a
+    // flat list. The `items.isNotEmpty` half is a safety net: if anything ever
+    // does leave loose items beside categories, they still render rather than
+    // becoming invisible.
     final looseUnchecked = list.items.where((item) => !item.checked).toList();
-    final hasCategories = list.categories.isNotEmpty;
-    if (list.items.isNotEmpty || !hasCategories) {
-      if (hasCategories) {
-        // Alongside real categories, loose items get an "Uncategorized" header
-        // so every group on screen looks the same (#35) — collapsible, with a
-        // count, and its add row tucked inside.
-        rows.add(_CategoryHeaderRow(null));
-        if (!_collapsed.contains(_uncategorizedKey)) {
-          for (final item in looseUnchecked) {
-            rows.add(_ItemRow(null, item));
-          }
-          rows.add(_AddRow(null));
-        }
-      } else {
-        // A list with no categories stays a flat checklist — no header, items
-        // simply sit on their own.
-        for (var index = 0; index < looseUnchecked.length; index++) {
-          rows.add(_ItemRow(null, looseUnchecked[index], firstInCard: index == 0));
-        }
-        rows.add(_AddRow(null, roundTop: looseUnchecked.isEmpty));
+    if (list.items.isNotEmpty || list.categories.isEmpty) {
+      for (var index = 0; index < looseUnchecked.length; index++) {
+        rows.add(_ItemRow(null, looseUnchecked[index], firstInCard: index == 0));
       }
+      rows.add(_AddRow(null, roundTop: looseUnchecked.isEmpty));
     }
 
     // Categories.
@@ -398,15 +374,11 @@ class _ListScreenState extends State<ListScreen> {
     if (packedCount > 0) {
       rows.add(_PackedHeaderRow(packedCount));
       if (!_packedCollapsed) {
+        // Unlabelled, and only ever present on a flat list (see above).
         final loosePacked = list.items.where((item) => item.checked).toList();
-        if (loosePacked.isNotEmpty) {
-          // Label these only when there are real categories to distinguish them
-          // from — a flat list's packed items need no heading.
-          if (hasCategories) rows.add(_PackedLabelRow(null));
-          for (var index = 0; index < loosePacked.length; index++) {
-            rows.add(_PackedItemRow(null, loosePacked[index],
-                isFirst: index == 0, isLast: index == loosePacked.length - 1));
-          }
+        for (var index = 0; index < loosePacked.length; index++) {
+          rows.add(_PackedItemRow(null, loosePacked[index],
+              isFirst: index == 0, isLast: index == loosePacked.length - 1));
         }
         for (final category in list.categories) {
           final checked = category.items.where((item) => item.checked).toList();
@@ -442,8 +414,13 @@ class _ListScreenState extends State<ListScreen> {
     if (dragged is! _ItemRow) return;
 
     final remaining = [...rows]..removeAt(oldIndex);
-    // Default target is the loose section (null), since it sits at the top.
-    PackCategory? targetCategory;
+    // Default target: the loose bucket on a flat list, or the first category
+    // when there are any. Without the latter, dropping above the topmost
+    // header would move the item back to loose and recreate the mixed state
+    // the store works to prevent (#46).
+    final list = _store.byId(widget.listId);
+    PackCategory? targetCategory =
+        (list != null && list.categories.isNotEmpty) ? list.categories.first : null;
     var uncheckedPos = 0;
     var inPacked = false;
 
@@ -494,13 +471,8 @@ class _ListScreenState extends State<ListScreen> {
                   showCategorySheet(context, listId: widget.listId),
               onAddPreset: _addPreset,
               onUncheckAll: () => _uncheckAll(list),
-              // The Uncategorized section collapses with everything else — its
-              // key isn't in list.categories, so it has to be added explicitly.
-              onCollapseAll: () => setState(() {
-                _collapsed
-                  ..addAll(list.categories.map((category) => category.id))
-                  ..add(_uncategorizedKey);
-              }),
+              onCollapseAll: () => setState(() =>
+                  _collapsed.addAll(list.categories.map((category) => category.id))),
               onExpandAll: () => setState(_collapsed.clear),
               onSavePreset: () => _saveAsPreset(list),
               onDelete: () => _deleteList(list),
@@ -563,14 +535,9 @@ class _ListScreenState extends State<ListScreen> {
 
     switch (row) {
       case _CategoryHeaderRow(:final category):
-        // A null category is the Uncategorized section: it holds the list's
-        // loose items, has no icon, and offers no rename/delete/reorder menu
-        // because there's no real category behind it to act on.
-        final collapseKey = category?.id ?? _uncategorizedKey;
-        final headerItems = category?.items ?? list.items;
-        final collapsed = _collapsed.contains(collapseKey);
-        final total = headerItems.length;
-        final packed = headerItems.where((item) => item.checked).length;
+        final collapsed = _collapsed.contains(category.id);
+        final total = category.items.length;
+        final packed = category.items.where((item) => item.checked).length;
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -583,11 +550,10 @@ class _ListScreenState extends State<ListScreen> {
           child: InkWell(
             onTap: () => setState(() {
               collapsed
-                  ? _collapsed.remove(collapseKey)
-                  : _collapsed.add(collapseKey);
+                  ? _collapsed.remove(category.id)
+                  : _collapsed.add(category.id);
             }),
-            onLongPress:
-                category == null ? null : () => _categoryMenu(list, category),
+            onLongPress: () => _categoryMenu(list, category),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 7),
               child: Row(
@@ -600,14 +566,14 @@ class _ListScreenState extends State<ListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        if (category?.icon != null) ...[
-                          Text(category!.icon!,
+                        if (category.icon != null) ...[
+                          Text(category.icon!,
                               style: const TextStyle(fontSize: 14.5)),
                           const SizedBox(width: 5),
                         ],
                         Flexible(
                           child: Text(
-                            (category?.name ?? 'Uncategorized').toUpperCase(),
+                            category.name.toUpperCase(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -813,7 +779,7 @@ class _ListScreenState extends State<ListScreen> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              (category?.name ?? 'Uncategorized').toUpperCase(),
+              category.name.toUpperCase(),
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
