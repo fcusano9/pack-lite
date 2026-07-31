@@ -25,13 +25,32 @@ knockout rather than a drawn mark, so green and cobalt never touch.
 
 | File | Purpose |
 |---|---|
-| `icon.svg` | **The only place artwork lives.** Keep the ids `backdrop` and `art` — the build script looks them up by name |
-| `build_icons.py` | Emits the render variants, rasterises them, recovers alpha, writes the three PNGs |
+| `icon.svg` | **The only place artwork lives.** Keep the ids `backdrop` and `art`, and the `depth`/`panel` classes — the build script looks them all up by name |
+| `build_icons.py` | Emits the render variants, rasterises them, recovers alpha, writes every PNG |
 | `README.md` | This file |
 
-`build_icons.py` produces four renders from the one SVG: the master (backdrop +
-art), the adaptive background (backdrop alone), and the art composited on white
-and on black.
+## What gets generated
+
+| Output | Used for |
+|---|---|
+| `icon.png` | Master — iOS light, Play listing, legacy Android |
+| `icon_background.png` | Android adaptive background layer |
+| `icon_foreground.png` | Android adaptive foreground layer |
+| `icon_dark.png` | **iOS 18 dark** icon (#47) |
+| `icon_tinted.png` | **iOS 18 tinted** icon (#47) |
+| `icon_monochrome.png` | **Android 13+ themed** icon (#48) |
+
+All six come from `icon.svg`. The variants are derived, not drawn:
+
+- **dark** is the art with the cobalt backdrop dropped — Apple composites its own
+  dark backdrop. That makes it identical to the adaptive foreground, so it's
+  copied rather than re-rendered. Split them if it ever needs its own treatment.
+- **tinted** is that, desaturated. The system applies the user's colour, so any
+  colour left in would fight it.
+- **monochrome** strips every element marked `class="depth"` (shading) and
+  `class="panel"` (the green fill behind the cut), then flattens the rest to one
+  colour. Android tints by **alpha only**, so the panel has to go — otherwise it
+  fills the knockout and the check disappears.
 
 ## Why the foreground is rendered twice
 
