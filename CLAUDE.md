@@ -101,7 +101,9 @@ Already handled, don't "fix" these:
 Deliberate platform asymmetries:
 - **Haptics.** Android drives the vibrator directly for amplitude control; iOS falls back
   to `HapticFeedback.*` (see `haptics.dart`), so the Settings strength levels are coarser
-  there. Expected, not a regression.
+  there *and* obey the system haptic setting. The Settings helper text is
+  platform-conditional for exactly that reason (#38) — the Android wording is false on
+  iOS. Guarded by `settings_platform_copy_test.dart`.
 - **Sound obeys the iOS silent switch.** `sound.dart` uses
   `AVAudioSessionCategory.ambient`, so the check-off pop is muted when the ringer switch is
   off — unlike Android, where the whole point was bypassing system touch-sound settings.
@@ -176,6 +178,13 @@ that's only partly done — annotate it instead.
   The item rows still use the `? null :` form; harmless today since they hold no focus,
   but don't put a `TextField` under one. Guarded by `add_item_keyboard_test.dart`, which
   asserts `tester.testTextInput.isVisible` — the reliable way to test keyboard state.
+- **`Share.shareXFiles` without `sharePositionOrigin` silently does nothing on iOS.**
+  It presents no sheet and, critically, **does not throw** — so a `try/catch` around it
+  never fires and Export looks like a dead button (#37). The origin is documented as an
+  iPad requirement, which is easy to skip when testing on a phone. `DataIO.export` now
+  takes one and returns the `ShareResult`; the caller surfaces a toast on
+  `ShareResultStatus.unavailable`, so "the platform declined" can never again be
+  indistinguishable from "nothing happened".
 - Verifying on Flutter **web** (browser pane): `main.dart` calls
   `SemanticsBinding.instance.ensureSemantics()` so `read_page` sees widgets. Coordinate
   clicks are unreliable (2× display scaling), especially top-bar icons — prefer element

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart' show ShareResultStatus;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_info.dart';
@@ -67,8 +69,15 @@ class SettingsScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                     child: Text(
-                      'Works independently of your phone\'s touch-vibration '
-                      'setting.',
+                      // Android drives the vibrator directly, so it genuinely
+                      // bypasses the system setting. iOS falls back to
+                      // HapticFeedback, which does not — claiming otherwise
+                      // there is simply false (#38).
+                      defaultTargetPlatform == TargetPlatform.iOS
+                          ? 'Strength is approximate on iPhone, and follows '
+                              'your system haptic settings.'
+                          : 'Works independently of your phone\'s '
+                              'touch-vibration setting.',
                       style: TextStyle(fontSize: 12, color: harbor.mut, height: 1.4),
                     ),
                   ),
@@ -152,8 +161,21 @@ class SettingsScreen extends StatelessWidget {
   // ---- data actions ----
 
   Future<void> _export(BuildContext context) async {
+    // iPad anchors the share popover to a rect; without one nothing is
+    // presented at all and no error is raised (#37).
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box != null && box.hasSize
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
     try {
-      await DataIO.export(context.read<AppStore>());
+      final result = await DataIO.export(context.read<AppStore>(),
+          sharePositionOrigin: origin);
+      // `dismissed` is the user changing their mind; `unavailable` means the
+      // platform declined to show anything, which used to look identical to
+      // the button being dead.
+      if (result.status == ShareResultStatus.unavailable && context.mounted) {
+        _toast(context, 'Sharing isn\'t available on this device');
+      }
     } catch (e) {
       if (context.mounted) _toast(context, 'Export failed: $e');
     }

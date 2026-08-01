@@ -330,12 +330,17 @@ difference here is not automatically a bug. See the iOS section of `CLAUDE.md`.
   this much via its simulator screenshot artifact — start here only if that's green).
 - [ ] **IOS-2** Check-off **haptics** fire. They'll feel coarser than Android and the
   Settings strength levels less distinct, because iOS falls back to `HapticFeedback.*`
-  with no amplitude control. Expected.
+  with no amplitude control. Expected. The Settings note should read **"Strength is
+  approximate on iPhone…"**, not the Android wording about bypassing the system setting
+  (#38) — that claim is false on iOS.
 - [ ] **IOS-3** The check-off **pop is silent when the ringer switch is off**, and audible
   when it's on. This is intentional (`AVAudioSessionCategory.ambient`) and the opposite of
   the Android behaviour, where sound deliberately bypasses system touch-sound settings.
-- [ ] **IOS-4** **Export** opens the iOS share sheet; **Import** opens the Files document
-  picker and a round-trip restores the data (no permission prompt should appear).
+- [ ] **IOS-4** **Export** opens the iOS share sheet showing `pack-lite-backup-<date>.json`
+  (#37 — it previously did nothing at all), and **Import** opens the Files document picker;
+  a round-trip restores the data with no permission prompt. Worth trying on an **iPad** too
+  if one is ever to hand: the share popover needs an anchor rect there, which is what was
+  missing.
 - [ ] **IOS-5** Settings → ABOUT links open Safari. iOS needs no `<queries>` equivalent for
   `https`, so if these fail the cause is different from the Android case in SET-8.
 - [ ] **IOS-6** **Delete All Data** clears everything locally. Note the Google-account
