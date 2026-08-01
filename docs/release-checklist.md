@@ -32,14 +32,15 @@ These are hard blockers. Neither store will accept a build without them.
       marketing icon with its alpha channel stripped. Sources in `assets/icon/src/`.
       **Still to do for Play:** export a 512×512 listing icon — the store console
       wants it uploaded separately, it isn't part of the app bundle.
-- [x] **REL-2 · Privacy policy, publicly hosted.** *Written 2026-07-31 (#39).*
-      `docs/privacy-policy.md` and `docs/terms-of-service.md`, covering the three
-      ways data can leave the device: the OS backup, Export, and the links out to
-      GitHub. **Still needs you to switch GitHub Pages on** — Settings → Pages →
-      Deploy from branch → `main` → `/docs`. Not tickable as *hosted* until the URL
-      resolves, so treat this as done-but-unpublished.
-- [ ] **REL-3 · Support URL.** The repo's Issues page is acceptable for both, and
-      is already linked from the site's landing page.
+- [x] **REL-2 · Privacy policy, publicly hosted.** *Done 2026-08-01 (#39).* Live at
+      **<https://fcusano9.github.io/pack-lite/privacy-policy>** — paste that into both
+      store consoles. Terms sit alongside it at `/terms-of-service`. Both cover the
+      three ways data can leave the device: the OS backup, Export, and the links out
+      to GitHub. Served by GitHub Pages from `main` `/docs`; a Jekyll `exclude` keeps
+      this checklist and the regression plan out of the published site.
+- [x] **REL-3 · Support URL.** *Done 2026-08-01.*
+      **<https://github.com/fcusano9/pack-lite/issues>** — accepted by both stores, and
+      linked from the site's landing page.
 - [ ] **REL-4 · Decide the public version number.** `pubspec.yaml` is currently
       `1.0.0+5`. The `+N` build number must increase on **every** upload to either
       store, forever — see REL-5.
