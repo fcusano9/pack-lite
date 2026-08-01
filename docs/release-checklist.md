@@ -32,13 +32,14 @@ These are hard blockers. Neither store will accept a build without them.
       marketing icon with its alpha channel stripped. Sources in `assets/icon/src/`.
       **Still to do for Play:** export a 512×512 listing icon — the store console
       wants it uploaded separately, it isn't part of the app bundle.
-- [ ] **REL-2 · Privacy policy, publicly hosted.** Both stores require a URL even
-      when the app collects nothing. GitHub Pages on this repo is free and
-      sufficient. It must state plainly that Pack Lite stores everything on the
-      device, has no account, no analytics and no ads — and should mention that
-      Android's Auto Backup may copy data to the user's own Google account, since
-      that is user-visible behaviour even though we never receive it.
-- [ ] **REL-3 · Support URL.** The repo's Issues page is acceptable for both.
+- [x] **REL-2 · Privacy policy, publicly hosted.** *Written 2026-07-31 (#39).*
+      `docs/privacy-policy.md` and `docs/terms-of-service.md`, covering the three
+      ways data can leave the device: the OS backup, Export, and the links out to
+      GitHub. **Still needs you to switch GitHub Pages on** — Settings → Pages →
+      Deploy from branch → `main` → `/docs`. Not tickable as *hosted* until the URL
+      resolves, so treat this as done-but-unpublished.
+- [ ] **REL-3 · Support URL.** The repo's Issues page is acceptable for both, and
+      is already linked from the site's landing page.
 - [ ] **REL-4 · Decide the public version number.** `pubspec.yaml` is currently
       `1.0.0+5`. The `+N` build number must increase on **every** upload to either
       store, forever — see REL-5.
