@@ -138,12 +138,11 @@ These are hard blockers. Neither store will accept a build without them.
 
 ### Fix first
 
-- [ ] **IOS-REL-4** **Issue #37 — Export Data silently does nothing on iOS.** Export
-      is the only route data has off an iOS device (there is no `BackupSync`
-      equivalent there), so shipping without it is a poor first impression and a
-      plausible review question about a non-functional control.
-- [ ] **IOS-REL-5** Issue #38 — the vibration helper text is Android-only copy and is
-      factually wrong on iOS.
+- [x] **IOS-REL-4 · Export works on iOS.** *Fixed 2026-07-31 (#37).* The cause was a
+      missing `sharePositionOrigin`, not the share_plus version the issue suspected —
+      without one iOS presents no sheet and does not throw. Export now also surfaces a
+      toast when the platform declines, so it can never fail silently again.
+- [x] **IOS-REL-5 · Vibration copy is platform-correct.** *Fixed 2026-07-31 (#38).*
 - [ ] **IOS-REL-6** Work through `docs/regression-tests.md` §17 on a **real iPhone**.
       IOS-2 (haptics) and IOS-3 (ringer switch) cannot be checked in a simulator, and
       no physical device is set up — Frank's iPhone 12 is a work phone where MDM may
