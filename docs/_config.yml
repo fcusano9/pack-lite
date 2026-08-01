@@ -1,0 +1,9 @@
+title: Pack Lite
+description: A simple, fast, offline packing-list app.
+theme: jekyll-theme-minimal
+
+# Internal working documents. They stay in the repo but are not part of the
+# published site — the site exists to host the store-required legal pages.
+exclude:
+  - regression-tests.md
+  - release-checklist.md

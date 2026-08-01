@@ -32,13 +32,14 @@ These are hard blockers. Neither store will accept a build without them.
       marketing icon with its alpha channel stripped. Sources in `assets/icon/src/`.
       **Still to do for Play:** export a 512×512 listing icon — the store console
       wants it uploaded separately, it isn't part of the app bundle.
-- [ ] **REL-2 · Privacy policy, publicly hosted.** Both stores require a URL even
-      when the app collects nothing. GitHub Pages on this repo is free and
-      sufficient. It must state plainly that Pack Lite stores everything on the
-      device, has no account, no analytics and no ads — and should mention that
-      Android's Auto Backup may copy data to the user's own Google account, since
-      that is user-visible behaviour even though we never receive it.
-- [ ] **REL-3 · Support URL.** The repo's Issues page is acceptable for both.
+- [x] **REL-2 · Privacy policy, publicly hosted.** *Written 2026-07-31 (#39).*
+      `docs/privacy-policy.md` and `docs/terms-of-service.md`, covering the three
+      ways data can leave the device: the OS backup, Export, and the links out to
+      GitHub. **Still needs you to switch GitHub Pages on** — Settings → Pages →
+      Deploy from branch → `main` → `/docs`. Not tickable as *hosted* until the URL
+      resolves, so treat this as done-but-unpublished.
+- [ ] **REL-3 · Support URL.** The repo's Issues page is acceptable for both, and
+      is already linked from the site's landing page.
 - [ ] **REL-4 · Decide the public version number.** `pubspec.yaml` is currently
       `1.0.0+5`. The `+N` build number must increase on **every** upload to either
       store, forever — see REL-5.
@@ -137,12 +138,11 @@ These are hard blockers. Neither store will accept a build without them.
 
 ### Fix first
 
-- [ ] **IOS-REL-4** **Issue #37 — Export Data silently does nothing on iOS.** Export
-      is the only route data has off an iOS device (there is no `BackupSync`
-      equivalent there), so shipping without it is a poor first impression and a
-      plausible review question about a non-functional control.
-- [ ] **IOS-REL-5** Issue #38 — the vibration helper text is Android-only copy and is
-      factually wrong on iOS.
+- [x] **IOS-REL-4 · Export works on iOS.** *Fixed 2026-07-31 (#37).* The cause was a
+      missing `sharePositionOrigin`, not the share_plus version the issue suspected —
+      without one iOS presents no sheet and does not throw. Export now also surfaces a
+      toast when the platform declines, so it can never fail silently again.
+- [x] **IOS-REL-5 · Vibration copy is platform-correct.** *Fixed 2026-07-31 (#38).*
 - [ ] **IOS-REL-6** Work through `docs/regression-tests.md` §17 on a **real iPhone**.
       IOS-2 (haptics) and IOS-3 (ringer switch) cannot be checked in a simulator, and
       no physical device is set up — Frank's iPhone 12 is a work phone where MDM may
