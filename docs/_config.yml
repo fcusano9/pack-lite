@@ -1,6 +1,8 @@
 title: Pack Lite
 description: A simple, fast, offline packing-list app.
-theme: jekyll-theme-minimal
+# Primer is GitHub's own design system: neutral, highly legible, and it
+# reads as official — which suits pages a store reviewer will open.
+theme: jekyll-theme-primer
 
 # Internal working documents. They stay in the repo but are not part of the
 # published site — the site exists to host the store-required legal pages.
