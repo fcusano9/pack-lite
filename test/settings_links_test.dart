@@ -55,6 +55,34 @@ void main() {
     UrlLauncherPlatform.instance = launcher;
   });
 
+  test('legal links point at the hosted policy pages', () {
+    for (final url in [Links.privacyPolicy, Links.termsOfService]) {
+      final uri = Uri.parse(url);
+      expect(uri.scheme, 'https');
+      expect(uri.host, 'fcusano9.github.io');
+    }
+    // The stores reject a policy URL that is really the terms, and vice versa.
+    expect(Links.privacyPolicy, isNot(Links.termsOfService));
+    expect(Links.privacyPolicy, contains('privacy'));
+    expect(Links.termsOfService, contains('terms'));
+  });
+
+  testWidgets('the LEGAL rows open their links', (tester) async {
+    await tester.pumpWidget(_wrap(await _loadedStore()));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('Terms of Service'), 200);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Privacy Policy'));
+    await tester.pumpAndSettle();
+    expect(launcher.launched, [Links.privacyPolicy]);
+
+    await tester.tap(find.text('Terms of Service'));
+    await tester.pumpAndSettle();
+    expect(launcher.launched.last, Links.termsOfService);
+  });
+
   test('link constants are https URLs on the expected hosts', () {
     final source = Uri.parse(Links.sourceCode);
     final sponsor = Uri.parse(Links.sponsor);

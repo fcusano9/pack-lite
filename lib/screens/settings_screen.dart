@@ -120,6 +120,18 @@ class SettingsScreen extends StatelessWidget {
                         external: true,
                         onTap: () => _openLink(context, Links.sponsor)),
                   ]),
+                  _label(harbor, 'LEGAL'),
+                  _card(harbor, [
+                    _row(context,
+                        label: 'Privacy Policy',
+                        external: true,
+                        onTap: () => _openLink(context, Links.privacyPolicy)),
+                    _divider(harbor),
+                    _row(context,
+                        label: 'Terms of Service',
+                        external: true,
+                        onTap: () => _openLink(context, Links.termsOfService)),
+                  ]),
                   const SizedBox(height: 28),
                   Center(
                     child: Text(

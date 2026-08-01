@@ -235,6 +235,9 @@
   and matches the installed build.
 - [ ] **SET-7** **ABOUT → View Source on GitHub** opens the repo in the browser; the row
   shows an **open-in-new** glyph (not a chevron) to signal it leaves the app.
+- [ ] **SET-9** **LEGAL → Privacy Policy** and **Terms of Service** each open the right
+  page on `fcusano9.github.io/pack-lite`. Both stores require a reachable policy link, so
+  a dead one here is a submission problem, not just a broken row.
 - [ ] **SET-8** **ABOUT → Sponsor on GitHub** opens the **sponsors** page — confirm the
   URL really is `/sponsors/`, not the repo. **Test on a real device:** Android 11+ hides
   other apps unless declared in the manifest `<queries>`, so a broken build fails by doing
