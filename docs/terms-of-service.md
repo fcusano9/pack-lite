@@ -47,9 +47,14 @@ or with other people's devices. Beyond that, use it however you like.
 ## Source code
 
 Pack Lite's source is publicly available at
-[github.com/fcusano9/pack-lite](https://github.com/fcusano9/pack-lite). Your use
-of that source code is governed by the licence in the repository, which is
-separate from these terms and covers the code rather than the app.
+[github.com/fcusano9/pack-lite](https://github.com/fcusano9/pack-lite) under the
+[MIT Licence](https://github.com/fcusano9/pack-lite/blob/main/LICENSE). That
+licence covers the **source code** and is separate from these terms, which cover
+your use of the app.
+
+The MIT Licence does not grant any right to the **Pack Lite name or app icon**.
+You are welcome to build on the code; please don't publish the result under this
+app's name or branding.
 
 ## Third-party services
 
