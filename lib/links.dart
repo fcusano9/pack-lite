@@ -9,4 +9,12 @@ class Links {
   /// GitHub Sponsors page. Pack Lite is free with no ads or IAP, so this is
   /// the only way anyone can support it.
   static const String sponsor = 'https://github.com/sponsors/fcusano9';
+
+  /// Both stores require a reachable privacy policy, and linking it in-app is
+  /// the convention users expect. Served by GitHub Pages from `docs/`.
+  static const String privacyPolicy =
+      'https://fcusano9.github.io/pack-lite/privacy-policy';
+
+  static const String termsOfService =
+      'https://fcusano9.github.io/pack-lite/terms-of-service';
 }
