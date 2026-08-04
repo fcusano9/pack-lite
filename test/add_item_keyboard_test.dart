@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pack_lite/models.dart';
 import 'package:pack_lite/screens/list_screen.dart';
-import 'package:pack_lite/screens/preset_editor.dart';
+import 'package:pack_lite/screens/category_editor.dart';
 import 'package:pack_lite/store.dart';
 import 'package:pack_lite/theme.dart';
 
@@ -74,17 +74,18 @@ void main() {
     expect(tester.testTextInput.isVisible, isTrue);
   });
 
-  testWidgets('EMPTY preset: keyboard survives adding the first item',
+  testWidgets('EMPTY saved category: keyboard survives adding the first item',
       (tester) async {
     final store = AppStore();
     await store.load();
-    store.presets.insert(0, Preset(id: 'p', name: 'Toiletries', icon: '🧼'));
+    store.savedCategories
+        .insert(0, PackCategory(id: 'c', name: 'Toiletries', icon: '🧼'));
 
     await tester.pumpWidget(ChangeNotifierProvider<AppStore>.value(
       value: store,
       child: MaterialApp(
         theme: harborTheme(Harbor.light, Brightness.light),
-        home: const PresetEditorScreen(presetId: 'p'),
+        home: const CategoryEditorScreen(categoryId: 'c'),
       ),
     ));
     await tester.pumpAndSettle();
@@ -97,7 +98,7 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
-    expect(store.presets.first.items.length, 1);
+    expect(store.savedCategories.first.items.length, 1);
     expect(tester.testTextInput.isVisible, isTrue);
   });
 }

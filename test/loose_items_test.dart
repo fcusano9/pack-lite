@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pack_lite/models.dart';
 import 'package:pack_lite/screens/list_screen.dart';
-import 'package:pack_lite/screens/preset_editor.dart';
+import 'package:pack_lite/screens/category_editor.dart';
 import 'package:pack_lite/store.dart';
 import 'package:pack_lite/theme.dart';
 
@@ -86,36 +86,31 @@ void main() {
     expect(find.text('New Category'), findsOneWidget);
   });
 
-  testWidgets('preset with loose items renders in the editor', (tester) async {
+  testWidgets('a saved category renders its items in the editor',
+      (tester) async {
     final store = AppStore();
     await store.load();
-    store.presets.insert(
+    store.savedCategories.insert(
       0,
-      Preset(
-        id: 'p',
+      PackCategory(
+        id: 'c',
         name: 'Toiletries',
         icon: '🧴',
         items: [
-          Item(id: 'pi1', name: 'Toothbrush'),
-          Item(id: 'pi2', name: 'Floss'),
-        ],
-        categories: [
-          PackCategory(
-              id: 'pc1',
-              name: 'Extras',
-              items: [Item(id: 'pi3', name: 'Nail clippers')]),
+          Item(id: 'ci1', name: 'Toothbrush'),
+          Item(id: 'ci2', name: 'Floss'),
         ],
       ),
     );
 
-    await tester.pumpWidget(_wrap(store, const PresetEditorScreen(presetId: 'p')));
+    await tester
+        .pumpWidget(_wrap(store, const CategoryEditorScreen(categoryId: 'c')));
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Toothbrush'), findsOneWidget); // loose preset item
+    expect(find.text('Toiletries'), findsOneWidget);
+    expect(find.text('Toothbrush'), findsOneWidget);
     expect(find.text('Floss'), findsOneWidget);
-    expect(find.text('EXTRAS'), findsOneWidget); // category
-    expect(find.text('Nail clippers'), findsOneWidget);
   });
 
   test('loose items round-trip through JSON', () {

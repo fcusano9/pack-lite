@@ -130,9 +130,9 @@ List<PackingList> buildSeedLists() {
   ];
 }
 
-/// Starter presets so the preset picker and Settings aren't empty on first
-/// run. Ordinary data — editable and deletable like anything else.
-List<Preset> buildSeedPresets() {
+/// Starter saved categories so the category picker and Settings aren't empty
+/// on first run. Ordinary data — editable and deletable like anything else.
+List<PackCategory> buildSeedCategories() {
   PackCategory category(String name, String? icon, List<String> items) =>
       PackCategory(
         id: newId(),
@@ -142,54 +142,33 @@ List<Preset> buildSeedPresets() {
       );
 
   return [
-    Preset(
-      id: newId(),
-      name: 'Toiletries',
-      icon: '🧴',
-      categories: [
-        category('Toiletries', '🧴', [
-          'Toothbrush',
-          'Toothpaste',
-          'Deodorant',
-          'Razor',
-          'Shampoo',
-          'Body wash',
-          'Floss',
-          'Moisturizer',
-          'Nail clippers',
-        ]),
-      ],
-    ),
-    Preset(
-      id: newId(),
-      name: 'Tech & Chargers',
-      icon: '🔌',
-      categories: [
-        category('Electronics', '🔌', [
-          'Phone charger',
-          'Power bank',
-          'Charging cables',
-          'Wall adapter',
-          'Headphones',
-          'Laptop & charger',
-        ]),
-      ],
-    ),
-    Preset(
-      id: newId(),
-      name: 'Beach Gear',
-      icon: '🏖️',
-      categories: [
-        category('Beach', '⛱️', [
-          'Swimsuit',
-          'Beach towel',
-          'Sunscreen',
-          'Sunglasses',
-          'Flip flops',
-          'Beach bag',
-          'Water bottle',
-        ]),
-      ],
-    ),
+    category('Toiletries', '🧴', [
+      'Toothbrush',
+      'Toothpaste',
+      'Deodorant',
+      'Razor',
+      'Shampoo',
+      'Body wash',
+      'Floss',
+      'Moisturizer',
+      'Nail clippers',
+    ]),
+    category('Electronics', '🔌', [
+      'Phone charger',
+      'Power bank',
+      'Charging cables',
+      'Wall adapter',
+      'Headphones',
+      'Laptop & charger',
+    ]),
+    category('Beach', '⛱️', [
+      'Swimsuit',
+      'Beach towel',
+      'Sunscreen',
+      'Sunglasses',
+      'Flip flops',
+      'Beach bag',
+      'Water bottle',
+    ]),
   ];
 }

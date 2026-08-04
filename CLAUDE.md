@@ -18,13 +18,15 @@ feature creep.
 - `store.dart` — `AppStore extends ChangeNotifier`, the single source of truth.
   Whole model persisted as ONE JSON doc in shared_preferences on every mutation.
   Keys: `packlite.data`, `packlite.theme`, `packlite.vibration`. Seeds sample
-  lists + presets on first launch.
-- `models.dart` — `Item`, `PackCategory`, `PackingList`, `Preset` (+ toJson/fromJson).
+  lists + saved categories on first launch. The document is `v2`
+  (`{v, exportedAt, lists, categories}`); `v1`'s `presets` key is dead and not
+  migrated — see Saved categories below.
+- `models.dart` — `Item`, `PackCategory`, `PackingList` (+ toJson/fromJson).
 - `theme.dart` — the **Harbor** design language as a `ThemeExtension` (light + dark).
 - `backup_sync.dart` — nudges Android Auto Backup (`BackupManager.dataChanged()` over
   a MethodChannel to `MainActivity.kt`) after destructive changes. See the gotcha below.
-- `screens/` — home, list_screen, preset_editor, presets_screen, settings_screen.
-- `sheets/` — new_list, category, icon_picker, preset_picker (bottom sheets).
+- `screens/` — home, list_screen, category_editor, categories_screen, settings_screen.
+- `sheets/` — new_list, category, icon_picker, category_picker (bottom sheets).
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
 - `motion.dart` — `Motion.menu`, the shared `AnimationStyle` for menus. Applied via
   `PopupMenuButton.popUpAnimationStyle` and `showModalBottomSheet(sheetAnimationStyle:)`.
@@ -32,15 +34,38 @@ feature creep.
 - `links.dart` — outbound URLs (repo, GitHub Sponsors) shown in Settings → ABOUT.
   Opened via `url_launcher`; Android needs the `https` VIEW `<intent>` in the manifest's
   `<queries>` or the taps silently do nothing on Android 11+.
-- Preset→list merge rule: same-name categories merge; duplicate item names skipped.
 - **Invariant: a list has either no categories, or categories and no loose items.**
   `AppStore._absorbLooseItems` folds loose items into a real category named
   `Uncategorized` the instant a list gains its first one (#46), so that section is an
   ordinary `PackCategory` — renameable, reorderable, deletable — with no special case in
-  the UI. It runs on `addCategory`, `addPresetToList`, and on load/import (older documents
-  can hold both). `_buildRows` still renders a header-less loose section when
+  the UI. It runs on `addCategory`, `addSavedCategoryToList`, and on load/import (older
+  documents can hold both). `_buildRows` still renders a header-less loose section when
   `items.isNotEmpty`, purely as a safety net so items can never become invisible if the
   invariant is somehow broken; in normal operation that only fires on a flat list.
+
+## Saved categories (was: presets)
+`AppStore.savedCategories` is a `List<PackCategory>` living outside any list — reusable
+blocks like "Toiletries". **There is no separate template type.** #13 deleted `Preset`,
+which was a `PackingList` minus checkboxes: ~960 lines maintaining a parallel universe of
+the same shape, where every seed preset in practice wrapped a *single* category of the
+same name. A whole-trip template is already covered by **Duplicate** (which #27 made start
+fully unpacked), so the second concept earned nothing.
+
+Consequences worth knowing:
+- Only one container type exists now, so the #46 invariant is universal. Presets could
+  hold loose items *and* categories at once — the state #46 declared illegal for lists.
+- **Merge rule** (`addSavedCategoryToList`): a list category with the same name
+  (case-insensitive) absorbs the items, otherwise the category is appended; item names
+  already present are skipped either way. `copyUnchecked()` guarantees a block never
+  arrives pre-packed.
+- UI copy is just "Categories" (Settings row, screen title). The list `+` menu says
+  **"Add Saved Category"** — the one place the adjective is needed, since it sits next to
+  "New Category".
+- **Saving a category whose name is already in the library adds a second entry** rather
+  than merging. Matches the old preset behaviour and is non-destructive, but it does mean
+  two same-name blocks can coexist; revisit if it proves annoying.
+- **No `v1` migration** — the app has only ever run on Frank's devices, so a stored
+  `presets` key is ignored and dropped on the next write. Don't add migration code for it.
 
 ## Harbor design language
 Cool grey-blue neutrals, ONE cobalt accent (#2251CC light / #5B82F0 dark) for

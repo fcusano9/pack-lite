@@ -17,7 +17,11 @@ const _vibrationKey = 'packlite.vibration';
 /// one JSON document on every mutation.
 class AppStore extends ChangeNotifier {
   final List<PackingList> lists = [];
-  final List<Preset> presets = [];
+
+  /// Reusable categories the user can drop into any list — "Toiletries",
+  /// "Electronics". Just [PackCategory] objects that live outside a list; there
+  /// is no separate template type (#13).
+  final List<PackCategory> savedCategories = [];
   ThemeMode themeMode = ThemeMode.system;
   VibrationLevel vibration = VibrationLevel.medium;
 
@@ -40,7 +44,7 @@ class AppStore extends ChangeNotifier {
     final raw = _prefs!.getString(_dataKey);
     if (raw == null) {
       lists.addAll(buildSeedLists());
-      presets.addAll(buildSeedPresets());
+      savedCategories.addAll(buildSeedCategories());
       await _persist();
     } else {
       _loadFrom(raw, replace: true);
@@ -48,7 +52,7 @@ class AppStore extends ChangeNotifier {
   }
 
   /// Parses a data document into memory. Used for first load and for import.
-  /// Returns (listCount, presetCount) applied, or null if the document is
+  /// Returns (listCount, categoryCount) applied, or null if the document is
   /// unreadable.
   (int, int)? _loadFrom(String raw, {required bool replace}) {
     try {
@@ -56,19 +60,19 @@ class AppStore extends ChangeNotifier {
       final newLists = (json['lists'] as List<dynamic>? ?? [])
           .map((e) => PackingList.fromJson(e as Map<String, dynamic>))
           .toList();
-      final newPresets = (json['presets'] as List<dynamic>? ?? [])
-          .map((e) => Preset.fromJson(e as Map<String, dynamic>))
+      final newCategories = (json['categories'] as List<dynamic>? ?? [])
+          .map((e) => PackCategory.fromJson(e as Map<String, dynamic>))
           .toList();
       if (replace) {
         lists
           ..clear()
           ..addAll(newLists);
-        presets
+        savedCategories
           ..clear()
-          ..addAll(newPresets);
+          ..addAll(newCategories);
       } else {
         lists.insertAll(0, newLists);
-        presets.addAll(newPresets);
+        savedCategories.addAll(newCategories);
       }
       // Stored or imported data predating #46 can hold both loose items and
       // categories; normalise it so the rest of the app can rely on the
@@ -76,20 +80,22 @@ class AppStore extends ChangeNotifier {
       for (final list in lists) {
         _absorbLooseItems(list);
       }
-      return (newLists.length, newPresets.length);
+      return (newLists.length, newCategories.length);
     } catch (_) {
       return null;
     }
   }
 
   String exportJson() => jsonEncode({
-        'v': 1,
+        // v2 dropped the `presets` key for `categories` (#13). Nothing reads
+        // this field; it's here so a document says what shape it is.
+        'v': 2,
         'exportedAt': DateTime.now().toIso8601String(),
         'lists': lists.map((e) => e.toJson()).toList(),
-        'presets': presets.map((e) => e.toJson()).toList(),
+        'categories': savedCategories.map((e) => e.toJson()).toList(),
       });
 
-  /// Imports a document. When [replace] is false, imported lists/presets are
+  /// Imports a document. When [replace] is false, imported lists/categories are
   /// added alongside existing ones. Returns counts, or null on parse failure.
   (int, int)? importJson(String raw, {required bool replace}) {
     final result = _loadFrom(raw, replace: replace);
@@ -102,7 +108,7 @@ class AppStore extends ChangeNotifier {
 
   Future<void> deleteAllData() async {
     lists.clear();
-    presets.clear();
+    savedCategories.clear();
     notifyListeners();
     await _persist();
     // Ask Android to replace its cloud snapshot now that everything is gone,
@@ -332,74 +338,39 @@ class AppStore extends ChangeNotifier {
     _mutate(() => byId(listId)?.uncheckAll());
   }
 
-  // ---- presets ----
+  // ---- saved categories ----
+  //
+  // A saved category is an ordinary [PackCategory] that lives outside any list.
+  // Because it's the same type, these operations are the list ones with the
+  // bucket swapped — there's no loose/categorised split to double up on.
 
-  Preset? presetById(String id) {
-    for (final preset in presets) {
-      if (preset.id == id) return preset;
+  PackCategory? savedCategoryById(String id) {
+    for (final category in savedCategories) {
+      if (category.id == id) return category;
     }
     return null;
   }
 
-  Preset addPreset(String name, String icon) {
-    final preset = Preset(id: newId(), name: name, icon: icon);
-    _mutate(() => presets.add(preset));
-    return preset;
+  PackCategory addSavedCategory(String name, String? icon) {
+    final category = PackCategory(id: newId(), name: name, icon: icon);
+    _mutate(() => savedCategories.add(category));
+    return category;
   }
 
-  Preset saveListAsPreset(String listId) {
-    final list = byId(listId)!;
-    final preset = Preset.fromList(list);
-    _mutate(() => presets.add(preset));
-    return preset;
+  /// Copies one of a list's categories into the library. Unchecked, so the
+  /// block arrives ready to pack rather than carrying this trip's ticks.
+  PackCategory? saveCategoryToLibrary(String listId, String categoryId) {
+    final category = _category(listId, categoryId);
+    if (category == null) return null;
+    final saved = category.copyUnchecked();
+    _mutate(() => savedCategories.add(saved));
+    return saved;
   }
 
-  Preset saveCategoryAsPreset(String listId, String categoryId) {
-    final list = byId(listId)!;
-    final category = _category(listId, categoryId)!;
-    final preset = Preset.fromCategory(category, icon: list.icon);
-    _mutate(() => presets.add(preset));
-    return preset;
-  }
-
-  void updatePreset(String id, {String? name, String? icon}) {
-    _mutate(() {
-      final preset = presetById(id);
-      if (preset == null) return;
-      if (name != null) preset.name = name;
-      if (icon != null) preset.icon = icon;
-    });
-  }
-
-  void deletePreset(String id) {
-    _mutate(() => presets.removeWhere((preset) => preset.id == id));
-  }
-
-  void reorderPresets(int oldIndex, int newIndex) {
-    _mutate(() => presets.insert(newIndex, presets.removeAt(oldIndex)));
-  }
-
-  // preset editor operations (reuse category/item ops against a preset)
-
-  PackCategory? _presetCategory(String presetId, String categoryId) {
-    final preset = presetById(presetId);
-    if (preset == null) return null;
-    for (final category in preset.categories) {
-      if (category.id == categoryId) return category;
-    }
-    return null;
-  }
-
-  void presetAddCategory(String presetId, String name, String? icon) {
-    _mutate(() => presetById(presetId)
-        ?.categories
-        .add(PackCategory(id: newId(), name: name, icon: icon)));
-  }
-
-  void presetUpdateCategory(String presetId, String categoryId,
+  void updateSavedCategory(String id,
       {String? name, String? icon, bool clearIcon = false}) {
     _mutate(() {
-      final category = _presetCategory(presetId, categoryId);
+      final category = savedCategoryById(id);
       if (category == null) return;
       if (name != null) category.name = name;
       if (clearIcon) {
@@ -410,93 +381,78 @@ class AppStore extends ChangeNotifier {
     });
   }
 
-  void presetDeleteCategory(String presetId, String categoryId) {
+  void deleteSavedCategory(String id) {
+    _mutate(() => savedCategories.removeWhere((category) => category.id == id));
+  }
+
+  void reorderSavedCategories(int oldIndex, int newIndex) {
     _mutate(() =>
-        presetById(presetId)?.categories.removeWhere((category) => category.id == categoryId));
+        savedCategories.insert(newIndex, savedCategories.removeAt(oldIndex)));
   }
 
-  /// Loose preset items when [categoryId] is null, else the preset category's items.
-  List<Item>? _presetItemsIn(String presetId, String? categoryId) {
-    final preset = presetById(presetId);
-    if (preset == null) return null;
-    if (categoryId == null) return preset.items;
-    return _presetCategory(presetId, categoryId)?.items;
-  }
-
-  void presetAddItem(String presetId, String? categoryId, String name) {
+  void savedCategoryAddItem(String categoryId, String name) {
     _mutate(() =>
-        _presetItemsIn(presetId, categoryId)?.add(Item(id: newId(), name: name)));
+        savedCategoryById(categoryId)?.items.add(Item(id: newId(), name: name)));
   }
 
-  void presetInsertItem(String presetId, String? categoryId, int index, Item item) {
+  void savedCategoryInsertItem(String categoryId, int index, Item item) {
     _mutate(() {
-      final items = _presetItemsIn(presetId, categoryId);
+      final items = savedCategoryById(categoryId)?.items;
       if (items == null) return;
       items.insert(index.clamp(0, items.length), item);
     });
   }
 
-  void presetRenameItem(
-      String presetId, String? categoryId, String itemId, String name) {
+  void savedCategoryRenameItem(String categoryId, String itemId, String name) {
     _mutate(() {
-      final item = _presetItemsIn(presetId, categoryId)
-          ?.where((item) => item.id == itemId)
+      final item = savedCategoryById(categoryId)
+          ?.items
+          .where((item) => item.id == itemId)
           .firstOrNull;
       if (item != null) item.name = name;
     });
   }
 
-  void presetDeleteItem(String presetId, String? categoryId, String itemId) {
+  void savedCategoryDeleteItem(String categoryId, String itemId) {
     _mutate(() =>
-        _presetItemsIn(presetId, categoryId)?.removeWhere((item) => item.id == itemId));
+        savedCategoryById(categoryId)?.items.removeWhere((item) => item.id == itemId));
   }
 
-  /// Pours a preset into a list. Loose preset items merge into the list's loose
-  /// items; categories whose name matches an existing category (case-insensitive)
-  /// merge into it. In both buckets, items whose name already exists there are
-  /// skipped so nothing duplicates.
-  void addPresetToList(String listId, String presetId) {
-    final preset = presetById(presetId);
+  /// Pours a saved category into a list. A list category with the same name
+  /// (case-insensitive) absorbs the items; otherwise the category is appended.
+  /// Either way, item names already present are skipped so nothing duplicates.
+  void addSavedCategoryToList(String listId, String savedCategoryId) {
+    final saved = savedCategoryById(savedCategoryId);
     final list = byId(listId);
-    if (preset == null || list == null) return;
+    if (saved == null || list == null) return;
     _mutate(() {
-      // Loose items → list's loose items.
-      final looseHave = list.items.map((item) => item.name.toLowerCase()).toSet();
-      for (final item in preset.items) {
-        if (looseHave.add(item.name.toLowerCase())) {
-          list.items.add(Item(id: newId(), name: item.name));
-        }
-      }
-      // Categories → matching category or appended.
-      for (final presetCategory in preset.categories) {
-        final existing = list.categories
-            .where((category) => category.name.toLowerCase() == presetCategory.name.toLowerCase())
-            .firstOrNull;
-        if (existing == null) {
-          list.categories.add(presetCategory.copy());
-        } else {
-          final have =
-              existing.items.map((item) => item.name.toLowerCase()).toSet();
-          for (final item in presetCategory.items) {
-            if (have.add(item.name.toLowerCase())) {
-              existing.items.add(Item(id: newId(), name: item.name));
-            }
+      final existing = list.categories
+          .where((category) =>
+              category.name.toLowerCase() == saved.name.toLowerCase())
+          .firstOrNull;
+      if (existing == null) {
+        list.categories.add(saved.copyUnchecked());
+      } else {
+        final have = existing.items.map((item) => item.name.toLowerCase()).toSet();
+        for (final item in saved.items) {
+          if (have.add(item.name.toLowerCase())) {
+            existing.items.add(Item(id: newId(), name: item.name));
           }
         }
       }
-      // A preset can hand a flat list its first category.
+      // This can hand a flat list its first category.
       _absorbLooseItems(list);
     });
   }
 
-  /// Creates a new list seeded from the given presets (used by the new-list
-  /// sheet's optional "start from presets" step).
-  PackingList addListFromPresets(
-      String name, String icon, List<String> presetIds) {
+  /// Creates a new list seeded from the given saved categories (used by the
+  /// new-list sheet's optional "start with categories" step).
+  PackingList addListFromSavedCategories(
+      String name, String icon, List<String> savedCategoryIds) {
     final list = PackingList(id: newId(), name: name, icon: icon);
     _mutate(() => lists.insert(0, list));
-    for (final id in presetIds) {
-      addPresetToList(list.id, id);
+    for (final id in savedCategoryIds) {
+      addSavedCategoryToList(list.id, id);
     }
     return list;
   }

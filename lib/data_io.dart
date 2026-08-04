@@ -58,7 +58,8 @@ class DataIO {
   static bool looksValid(String raw) {
     try {
       final json = jsonDecode(raw);
-      return json is Map && (json.containsKey('lists') || json.containsKey('presets'));
+      return json is Map &&
+          (json.containsKey('lists') || json.containsKey('categories'));
     } catch (_) {
       return false;
     }
@@ -72,9 +73,9 @@ class DataIO {
     }
   }
 
-  static int countPresets(String raw) {
+  static int countSavedCategories(String raw) {
     try {
-      return ((jsonDecode(raw) as Map)['presets'] as List?)?.length ?? 0;
+      return ((jsonDecode(raw) as Map)['categories'] as List?)?.length ?? 0;
     } catch (_) {
       return 0;
     }

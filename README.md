@@ -2,8 +2,8 @@
 
 A simple, fast, offline packing-list app for trips and activities. Built to sit
 between heavyweight packing apps (which force trip dates and other complexity)
-and plain to-do apps (which lack packing-specific features like reusable presets
-and a one-tap "uncheck all" to reset a list for the next trip).
+and plain to-do apps (which lack packing-specific features like reusable
+categories and a one-tap "uncheck all" to reset a list for the next trip).
 
 No account, no ads, no servers of our own — the app never sends your data
 anywhere, and works fully offline.
@@ -22,8 +22,9 @@ anywhere, and works fully offline.
   section and a small celebration fires when everything's packed.
 - **Reuse** — duplicate a list (the copy starts fully unpacked, ready for the next
   trip), or **uncheck all** to reset one in place.
-- **Presets** — reusable sets of items (e.g. Toiletries); pour them into any
-  list, save a list or category as a preset, or start a new list from presets.
+- **Saved categories** — reusable sets of items (e.g. Toiletries); drop one into
+  any list, save a category from a list to reuse later, or start a new list from
+  a few of them.
 - **Import / export** all data as a single JSON file for backup or moving phones.
 - Light / dark themes (follows system), adjustable vibration strength, and text
   that scales with the system font-size setting.
