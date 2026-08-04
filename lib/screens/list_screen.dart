@@ -271,7 +271,7 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ListTile(
               leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
-              title: Text('Save as category',
+              title: Text('Save category',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
