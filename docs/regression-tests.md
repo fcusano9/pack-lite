@@ -47,8 +47,8 @@
   only happens when no data document exists, so **Delete All Data does not reseed**
   (it writes an empty document; see DATA-7). Reinstalling isn't enough to reach this
   state either — see the Auto Backup gotcha in `CLAUDE.md`.
-- [ ] **SEED-2** Settings → List Presets shows three seeded presets: **Toiletries,
-  Tech & Chargers, Beach Gear**.
+- [ ] **SEED-2** Settings → Categories shows three seeded saved categories:
+  **Toiletries 🧴, Electronics 🔌, Beach ⛱️**.
 - [ ] **SEED-3** Camping Weekend shows an **All Packed** state (fully checked); the
   others show partial progress.
 - [ ] **SEED-4** Seed data is fully editable — a seeded list can be renamed, its items
@@ -79,17 +79,19 @@
 ## 3. Creating & editing lists (P0)
 
 - [ ] **NEW-1** FAB **+** opens the **New List** sheet with an icon tile, a name field
-  (autofocused), and (when presets exist) a **"Start from presets · optional"** chip row.
+  (autofocused), and (when saved categories exist) a
+  **"Start with categories · optional"** chip row. Each chip shows the category's icon
+  when it has one, replaced by a check when selected.
 - [ ] **NEW-2** **Create List** is disabled until the name is non-empty.
 - [ ] **NEW-3** Tapping the icon tile opens the emoji picker; the chosen icon shows on
   the tile and later on the card. Default icon is the backpack 🎒.
 - [ ] **NEW-4** Creating a list closes the sheet, adds the list to the **top** of Home,
   and **opens it** immediately.
-- [ ] **NEW-5** Selecting one or more preset chips seeds the new list with those presets'
-  items (merged per the preset rules — see §8).
+- [ ] **NEW-5** Selecting one or more category chips seeds the new list with those
+  categories' items, all **unpacked** (merged per the rules in §8).
 - [ ] **NEW-6** **Cancel** (or back) creates no list and returns to Home.
 - [ ] **NEW-7** On the list screen, tapping the **icon + title** in the header opens the
-  **Edit List** sheet (no preset chips when editing); changing name/icon updates the
+  **Edit List** sheet (no category chips when editing); changing name/icon updates the
   header and the Home card.
 - [ ] **NEW-8** A list with nothing in it shows the empty state: 📝, the heading
   **"Start your list"**, the subtitle **"Add items one by one, or group them into
@@ -106,7 +108,7 @@
   **empty** list too: the very first item is the case that used to drop the keyboard
   (issue #22), and every item after it behaved correctly, so testing a list that already
   has items will not catch a regression here.
-  *(Guarded by `add_item_keyboard_test.dart`, list and preset editor.)*
+  *(Guarded by `add_item_keyboard_test.dart`, list and category editor.)*
 - [ ] **ITEM-3** Tapping outside the field commits the current text and closes the row;
   submitting an **empty** field just closes it (no blank item created).
 - [ ] **ITEM-4** Tapping an item's checkbox: plays a haptic tick + pop sound, the check
@@ -134,7 +136,7 @@
   its `packed of total` count shows in the header.
 - [ ] **CAT-3** `···` menu → **Collapse All** / **Expand All** affect every category.
 - [ ] **CAT-4** Long-press a category header opens its menu: **Rename & icon**,
-  **Reorder categories** (only shown when ≥2 categories), **Save as preset**,
+  **Reorder categories** (only shown when ≥2 categories), **Save as category**,
   **Delete category**.
 - [ ] **CAT-5** **Rename & icon** updates the header; an icon can be added or cleared.
 - [ ] **CAT-6** **Reorder categories** sheet changes category order; it persists.
@@ -155,7 +157,7 @@
 - [ ] **LOOSE-4** The **PACKED · N** header collapses/hides all packed items and can be
   expanded again. *(Rendering guarded by `loose_items_test.dart`.)*
 - [ ] **LOOSE-5** **Uncategorized is an ordinary category** (#46): long-press offers
-  **Rename & icon**, **Reorder categories**, **Save as preset** and **Delete category**,
+  **Rename & icon**, **Reorder categories**, **Save as category** and **Delete category**,
   and each works. Renaming it away means the name is simply gone — no section reappears.
 - [ ] **LOOSE-6** It collapses with **Collapse All**, reorders among the other categories,
   and items drag into and out of it like any other. *(Store behaviour and the menu are
@@ -178,34 +180,47 @@
 - [ ] **ALLPACK-5** The **All packed** banner logic holds for a list that was created
   already-complete. *(Guarded by `all_packed_test.dart`.)*
 
-## 8. Presets (P1)
+## 8. Saved categories (P1)
 
-- [ ] **PRE-1** Header **+** → **Add Preset** opens a picker listing every preset with
-  its `categories · items` counts.
-- [ ] **PRE-2** Choosing a preset pours its items in and shows a snackbar
-  **"Added N items from preset"**.
-- [ ] **PRE-3** **Merge rule — loose:** a preset's loose items merge into the list's
-  loose items; an item whose name already exists there (case-insensitive) is **skipped**.
-- [ ] **PRE-4** **Merge rule — categories:** a preset category whose name matches an
-  existing category **merges into it** (duplicate item names skipped); a non-matching
-  category is appended as new.
-- [ ] **PRE-5** Adding a preset whose items are all already present shows
-  **"All preset items were already in this list"** and adds nothing.
-- [ ] **PRE-6** Settings → **List Presets** lists presets; the count in the Settings row
+Replaced presets in #13 — a reusable block is now an ordinary `PackCategory` outside
+any list, and there is no whole-list template (Duplicate covers that).
+
+- [ ] **SAVED-1** Header **+** offers **New Category** and **Add Saved Category**; the
+  latter opens a picker listing every saved category with its item count.
+- [ ] **SAVED-2** Choosing one pours its items in and shows a snackbar
+  **"Added N items from "<name>""**.
+- [ ] **SAVED-3** **Merge rule:** a saved category whose name matches an existing list
+  category (case-insensitive) **merges into it**, skipping item names already there; a
+  non-matching one is appended as a new category.
+  *(Guarded by `saved_categories_test.dart`.)*
+- [ ] **SAVED-4** Adding one whose items are all already present shows
+  **"Every item in "<name>" was already in this list"** and adds nothing.
+- [ ] **SAVED-5** Adding one to a **flat** list folds its loose items into `Uncategorized`
+  first — the §7 invariant holds. *(Guarded by `saved_categories_test.dart`.)*
+- [ ] **SAVED-6** Settings → **Categories** lists them; the count in the Settings row
   matches.
-- [ ] **PRE-7** In List Presets: **+** creates a preset (name + icon) and opens the
-  **Preset Editor**; tapping a preset opens it to edit.
-- [ ] **PRE-8** The Preset Editor behaves like the list screen **minus checkboxes /
-  PACKED** — add/rename/delete items and categories, loose items included.
-- [ ] **PRE-9** In List Presets, **swipe** a preset (either direction) → Delete with
-  confirm; **long-press** to reorder.
-- [ ] **PRE-10** Deleting a preset does **not** change lists already created from it.
-- [ ] **PRE-11** **Save as preset** from a list's `···` menu creates a preset copy of the
-  whole list (unchecked); snackbar confirms.
-- [ ] **PRE-12** **Save as preset** from a category's long-press menu creates a
-  single-category preset; snackbar confirms.
-- [ ] **PRE-13** Later edits to a list do **not** change a preset previously saved from
-  it (and vice-versa) — they're independent copies.
+- [ ] **SAVED-7** In Categories: **+** opens the New Category sheet (name + optional icon)
+  and then the editor; tapping a card opens it to edit. Tapping the editor's title row
+  reopens the sheet to rename / change the icon.
+- [ ] **SAVED-8** The editor is a **flat item list** — no category headers, no collapse, no
+  checkboxes. Add (Enter keeps the row open), swipe to rename / delete with **Undo**, and
+  long-press to reorder. *(Add-row keyboard guarded by `add_item_keyboard_test.dart`;
+  reorder by `saved_categories_test.dart` — `onReorderItem` already accounts for the
+  removed item, so shifting `newIndex` again lands items one slot short.)*
+- [ ] **SAVED-9** A saved category with **no icon** shows a neutral folder glyph in the
+  Categories cards and the picker, and no glyph in the editor title.
+- [ ] **SAVED-10** In Categories, **swipe** a card (either direction) → Delete with confirm;
+  **long-press** to reorder.
+- [ ] **SAVED-11** Deleting a saved category does **not** change lists that already use it.
+- [ ] **SAVED-12** **Save as category** from a category's long-press menu copies it into the
+  library **unchecked**, even if items were ticked; snackbar confirms.
+  *(Guarded by `saved_categories_test.dart`.)*
+- [ ] **SAVED-13** Later edits to a list do **not** change a saved category previously taken
+  from it (and vice-versa) — they're independent copies.
+- [ ] **SAVED-14** Saving a category whose name is already in the library adds a **second**
+  entry rather than merging. Deliberate (non-destructive) — flag it if it grates.
+- [ ] **SAVED-15** The list `···` menu has **no** "Save as Preset" item; whole-list reuse is
+  Home → swipe right → **Duplicate**, which starts fully unpacked (#27).
 
 ## 9. List reuse (P0)
 
@@ -249,17 +264,17 @@
 - [ ] **DATA-1** **Export Data** opens the system share sheet with a file named
   `pack-lite-backup-YYYY-MM-DD.json`.
 - [ ] **DATA-2** **Import Data** → file picker; selecting a valid backup shows a dialog
-  with its list/preset counts and **Add** vs **Replace** choices.
-- [ ] **DATA-3** **Add** (merge) keeps existing data and adds the imported lists/presets;
+  with its list/category counts and **Add** vs **Replace** choices.
+- [ ] **DATA-3** **Add** (merge) keeps existing data and adds the imported lists/categories;
   a toast reports the counts imported.
 - [ ] **DATA-4** **Replace** swaps all current data for the imported data.
 - [ ] **DATA-5** Importing a non-backup / corrupt file is rejected gracefully
   ("That doesn't look like a Pack Lite backup" / "Import failed — file may be corrupt").
 - [ ] **DATA-6** **Round-trip:** Export → Delete All Data → Import the file (Replace)
-  restores lists and presets intact (names, icons, items, checked states).
+  restores lists and saved categories intact (names, icons, items, checked states).
 - [ ] **DATA-7** **Delete All Data** is a **two-step** confirm: a warning dialog, then a
   **type-DELETE** dialog (the final button is disabled until "DELETE" is typed).
-  Completing it clears all lists and presets; Home shows the empty state. The first
+  Completing it clears all lists and saved categories; Home shows the empty state. The first
   dialog states that the **Google account backup** is cleared too.
 - [ ] **DATA-8** **Deleted data stays deleted across a reinstall.** Delete All Data, wait
   a few minutes on Wi-Fi (Android schedules the backup pass; it can't run offline), then
@@ -273,19 +288,19 @@
 ## 12. Feedback — haptics & sound (P1)
 
 - [ ] **FB-1** Checking an item gives a crisp haptic tick **and** the pop sound together.
-- [ ] **FB-2** Reordering (list, item, category, preset) fires a haptic on drag start.
+- [ ] **FB-2** Reordering (list, item, category, saved category) fires a haptic on drag start.
 - [ ] **FB-3** Completing a list gives the stronger "celebrate" haptic + bigger pop.
 - [ ] **FB-4** With Vibration = Off, no buzzes occur but sounds still play.
 
 ## 13. Theming & visuals (P2)
 
-- [ ] **THEME-1** Light and dark both render legibly across Home, list, presets,
+- [ ] **THEME-1** Light and dark both render legibly across Home, list, categories,
   settings — no unreadable low-contrast text.
 - [ ] **THEME-2** **System** mode follows the OS toggle live (flip system dark mode).
 - [ ] **THEME-3** Cobalt is used for actions & in-progress; **green only** for done
   states (All Packed card, completed progress bar, checkmarks).
 - [ ] **THEME-5** **Menus feel snappy** (issue #18). The `···` and **+** popup menus, the
-  long-press category menu (list *and* preset editor), and the **icon** and **preset**
+  long-press category menu (list *and* category editor), and the **icon** and **saved category**
   pickers all open in ~140ms and dismiss faster still — open and close each a few times in
   a row, which is where the old 300ms was noticeable. Nothing should flicker, land
   half-drawn, or drop the first tap.
@@ -307,7 +322,7 @@
 ## 15. Persistence & stability (P0)
 
 - [ ] **PERSIST-1** After a range of edits (add/check/rename/reorder across lists,
-  categories, presets, settings), **force-kill** the app and relaunch — every change is
+  categories, saved categories, settings), **force-kill** the app and relaunch — every change is
   still there.
 - [ ] **PERSIST-2** No crashes or error toasts during a full pass; nothing logged that
   looks like an unhandled exception.

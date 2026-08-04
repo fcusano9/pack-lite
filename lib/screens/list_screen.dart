@@ -8,7 +8,7 @@ import '../models.dart';
 import '../motion.dart';
 import '../sheets/category_sheet.dart';
 import '../sheets/new_list_sheet.dart';
-import '../sheets/preset_picker.dart';
+import '../sheets/category_picker.dart';
 import '../sheets/reorder_categories_sheet.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -192,27 +192,21 @@ class _ListScreenState extends State<ListScreen> {
     return result ?? false;
   }
 
-  Future<void> _addPreset() async {
-    final presetId = await showPresetPicker(context);
-    if (presetId == null || !mounted) return;
+  Future<void> _addSavedCategory() async {
+    final categoryId = await showCategoryPicker(context);
+    if (categoryId == null || !mounted) return;
+    final name = _store.savedCategoryById(categoryId)?.name ?? 'category';
     final before = _store.byId(widget.listId)!.totalItems;
-    _store.addPresetToList(widget.listId, presetId);
+    _store.addSavedCategoryToList(widget.listId, categoryId);
     final added = _store.byId(widget.listId)!.totalItems - before;
     Haptics.tap();
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(
         content: Text(added == 0
-            ? 'All preset items were already in this list'
-            : 'Added $added item${added == 1 ? '' : 's'} from preset'),
+            ? 'Every item in "$name" was already in this list'
+            : 'Added $added item${added == 1 ? '' : 's'} from "$name"'),
       ));
-  }
-
-  Future<void> _saveAsPreset(PackingList list) async {
-    _store.saveListAsPreset(widget.listId);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text('Saved "${list.name}" as a preset')));
   }
 
   Future<void> _uncheckAll(PackingList list) async {
@@ -277,15 +271,16 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ListTile(
               leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
-              title: Text('Save as preset',
+              title: Text('Save as category',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _store.saveCategoryAsPreset(widget.listId, category.id);
+                _store.saveCategoryToLibrary(widget.listId, category.id);
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
                   ..showSnackBar(SnackBar(
-                      content: Text('Saved "${category.name}" as a preset')));
+                      content:
+                          Text('Saved "${category.name}" for reuse')));
               },
             ),
             ListTile(
@@ -469,12 +464,11 @@ class _ListScreenState extends State<ListScreen> {
               onEdit: () => showNewListSheet(context, edit: list),
               onNewCategory: () =>
                   showCategorySheet(context, listId: widget.listId),
-              onAddPreset: _addPreset,
+              onAddSavedCategory: _addSavedCategory,
               onUncheckAll: () => _uncheckAll(list),
               onCollapseAll: () => setState(() =>
                   _collapsed.addAll(list.categories.map((category) => category.id))),
               onExpandAll: () => setState(_collapsed.clear),
-              onSavePreset: () => _saveAsPreset(list),
               onDelete: () => _deleteList(list),
             ),
             ProgressBar(
@@ -916,22 +910,20 @@ class _Header extends StatelessWidget {
     required this.list,
     required this.onEdit,
     required this.onNewCategory,
-    required this.onAddPreset,
+    required this.onAddSavedCategory,
     required this.onUncheckAll,
     required this.onCollapseAll,
     required this.onExpandAll,
-    required this.onSavePreset,
     required this.onDelete,
   });
 
   final PackingList list;
   final VoidCallback onEdit;
   final VoidCallback onNewCategory;
-  final VoidCallback onAddPreset;
+  final VoidCallback onAddSavedCategory;
   final VoidCallback onUncheckAll;
   final VoidCallback onCollapseAll;
   final VoidCallback onExpandAll;
-  final VoidCallback onSavePreset;
   final VoidCallback onDelete;
 
   @override
@@ -997,14 +989,15 @@ class _Header extends StatelessWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) => switch (value) {
               'category' => onNewCategory(),
-              _ => onAddPreset(),
+              _ => onAddSavedCategory(),
             },
             itemBuilder: (context) => [
               PopupMenuItem(
                   value: 'category',
                   child: Text('New Category', style: menuStyle)),
               PopupMenuItem(
-                  value: 'preset', child: Text('Add Preset', style: menuStyle)),
+                  value: 'saved',
+                  child: Text('Add Saved Category', style: menuStyle)),
             ],
           ),
           PopupMenuButton<String>(
@@ -1017,7 +1010,6 @@ class _Header extends StatelessWidget {
               'uncheck' => onUncheckAll(),
               'collapse' => onCollapseAll(),
               'expand' => onExpandAll(),
-              'preset' => onSavePreset(),
               'delete' => onDelete(),
               _ => (),
             },
@@ -1038,12 +1030,6 @@ class _Header extends StatelessWidget {
                 value: 'expand',
                 child: _MenuRow(
                     Icons.unfold_more_rounded, 'Expand All', menuStyle),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: 'preset',
-                child: _MenuRow(
-                    Icons.bookmark_add_outlined, 'Save as Preset', menuStyle),
               ),
               const PopupMenuDivider(),
               PopupMenuItem(

@@ -33,7 +33,7 @@ class _NewListSheetState extends State<_NewListSheet> {
       TextEditingController(text: widget.edit?.name ?? '');
   late String _icon = widget.edit?.icon ?? '🎒';
 
-  final Set<String> _selectedPresets = {};
+  final Set<String> _selectedCategories = {};
 
   bool get _canSave => _name.text.trim().isNotEmpty;
 
@@ -54,10 +54,10 @@ class _NewListSheetState extends State<_NewListSheet> {
     final store = context.read<AppStore>();
     final PackingList result;
     if (widget.edit == null) {
-      result = _selectedPresets.isEmpty
+      result = _selectedCategories.isEmpty
           ? store.addList(name, _icon)
-          : store.addListFromPresets(
-              name, _icon, _selectedPresets.toList());
+          : store.addListFromSavedCategories(
+              name, _icon, _selectedCategories.toList());
     } else {
       store.updateList(widget.edit!.id, name: name, icon: _icon);
       result = widget.edit!;
@@ -176,7 +176,7 @@ class _NewListSheetState extends State<_NewListSheet> {
               ),
             ),
           ),
-          if (!editing) _presetChips(context),
+          if (!editing) _categoryChips(context),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: SizedBox(
@@ -204,17 +204,17 @@ class _NewListSheetState extends State<_NewListSheet> {
     );
   }
 
-  Widget _presetChips(BuildContext context) {
+  Widget _categoryChips(BuildContext context) {
     final harbor = context.harbor;
-    final presets = context.read<AppStore>().presets;
-    if (presets.isEmpty) return const SizedBox(height: 4);
+    final categories = context.read<AppStore>().savedCategories;
+    if (categories.isEmpty) return const SizedBox(height: 4);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 18, 16, 0),
           child: Text(
-            'START FROM PRESETS · OPTIONAL',
+            'START WITH CATEGORIES · OPTIONAL',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -229,14 +229,14 @@ class _NewListSheetState extends State<_NewListSheet> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final preset in presets)
-                _PresetChip(
-                  preset: preset,
-                  selected: _selectedPresets.contains(preset.id),
+              for (final category in categories)
+                _CategoryChip(
+                  category: category,
+                  selected: _selectedCategories.contains(category.id),
                   onTap: () => setState(() {
-                    _selectedPresets.contains(preset.id)
-                        ? _selectedPresets.remove(preset.id)
-                        : _selectedPresets.add(preset.id);
+                    _selectedCategories.contains(category.id)
+                        ? _selectedCategories.remove(category.id)
+                        : _selectedCategories.add(category.id);
                   }),
                 ),
             ],
@@ -247,11 +247,11 @@ class _NewListSheetState extends State<_NewListSheet> {
   }
 }
 
-class _PresetChip extends StatelessWidget {
-  const _PresetChip(
-      {required this.preset, required this.selected, required this.onTap});
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip(
+      {required this.category, required this.selected, required this.onTap});
 
-  final Preset preset;
+  final PackCategory category;
   final bool selected;
   final VoidCallback onTap;
 
@@ -278,9 +278,15 @@ class _PresetChip extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 5),
                 child: Icon(Icons.check_rounded, size: 15, color: harbor.accent),
+              )
+            else if (category.icon != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 5),
+                child: Text(category.icon!,
+                    style: const TextStyle(fontSize: 13)),
               ),
             Text(
-              preset.name,
+              category.name,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

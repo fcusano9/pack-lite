@@ -46,7 +46,7 @@ void main() {
     await store.deleteAllData();
 
     expect(store.lists, isEmpty);
-    expect(store.presets, isEmpty);
+    expect(store.savedCategories, isEmpty);
   });
 
   test('deleteAllData survives the platform refusing the backup request',

@@ -24,7 +24,7 @@ Specifically, Pack Lite does not collect or transmit:
 
 ## Where your data is stored
 
-Everything you create in Pack Lite — your lists, categories, items, presets, and
+Everything you create in Pack Lite — your lists, categories, items, and
 your theme and vibration settings — is stored **on your device**, in storage that
 belongs to the app. It is not uploaded to us.
 

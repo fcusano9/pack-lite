@@ -11,7 +11,7 @@ import '../links.dart';
 import '../sound.dart';
 import '../store.dart';
 import '../theme.dart';
-import 'presets_screen.dart';
+import 'categories_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -84,11 +84,11 @@ class SettingsScreen extends StatelessWidget {
                   _label(harbor, 'GENERAL'),
                   _card(harbor, [
                     _row(context,
-                        label: 'List Presets',
-                        trailing: '${store.presets.length}',
+                        label: 'Categories',
+                        trailing: '${store.savedCategories.length}',
                         onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (_) => const PresetsScreen()))),
+                                builder: (_) => const CategoriesScreen()))),
                     _divider(harbor),
                     _row(context,
                         label: 'Language', trailing: 'English', enabled: false),
@@ -211,7 +211,7 @@ class SettingsScreen extends StatelessWidget {
     }
     if (!context.mounted) return;
     final lists = DataIO.countLists(raw);
-    final presets = DataIO.countPresets(raw);
+    final categories = DataIO.countSavedCategories(raw);
     final mode = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -220,7 +220,7 @@ class SettingsScreen extends StatelessWidget {
           title: const Text('Import backup'),
           content: Text(
               'This file has $lists list${lists == 1 ? '' : 's'} and '
-              '$presets preset${presets == 1 ? '' : 's'}.\n\n'
+              '$categories saved categor${categories == 1 ? 'y' : 'ies'}.\n\n'
               'Add them to your current data, or replace everything?'),
           actions: [
             TextButton(
@@ -244,7 +244,7 @@ class SettingsScreen extends StatelessWidget {
           result == null
               ? 'Import failed — file may be corrupt'
               : 'Imported ${result.$1} list${result.$1 == 1 ? '' : 's'} and '
-                  '${result.$2} preset${result.$2 == 1 ? '' : 's'}');
+                  '${result.$2} categor${result.$2 == 1 ? 'y' : 'ies'}');
     }
   }
 
@@ -257,7 +257,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete all data?'),
         content: const Text(
-            'Every list and preset will be permanently deleted — on this '
+            'Every list and saved category will be permanently deleted — on this '
             'device and from your Google account backup, so reinstalling '
             'won\'t bring them back. This cannot be undone. Consider '
             'exporting a copy first.'),

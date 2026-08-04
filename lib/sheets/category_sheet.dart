@@ -9,38 +9,32 @@ import 'icon_picker.dart';
 /// Bottom sheet for creating a category, or renaming one / changing its icon
 /// when [edit] is passed. Icons are optional for categories — no default.
 ///
-/// Works against a list ([listId]) or a preset ([presetId]). When
-/// [presetMetaId] is set, the sheet edits the preset's own name + icon
-/// instead of a category (icon required, defaults to 🎒).
-Future<void> showCategorySheet(
+/// Works against a list ([listId]) or, when [saved] is true, against the
+/// library of reusable categories. Both are the same type, so the only thing
+/// that changes is which store operations run.
+///
+/// Returns the created or edited category, or null if the sheet was dismissed.
+Future<PackCategory?> showCategorySheet(
   BuildContext context, {
   String? listId,
-  String? presetId,
-  String? presetMetaId,
+  bool saved = false,
   PackCategory? edit,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<PackCategory>(
     context: context,
     isScrollControlled: true,
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: _CategorySheet(
-        listId: listId,
-        presetId: presetId,
-        presetMetaId: presetMetaId,
-        edit: edit,
-      ),
+      child: _CategorySheet(listId: listId, saved: saved, edit: edit),
     ),
   );
 }
 
 class _CategorySheet extends StatefulWidget {
-  const _CategorySheet(
-      {this.listId, this.presetId, this.presetMetaId, this.edit});
+  const _CategorySheet({this.listId, this.saved = false, this.edit});
 
   final String? listId;
-  final String? presetId;
-  final String? presetMetaId;
+  final bool saved;
   final PackCategory? edit;
 
   @override
@@ -48,12 +42,9 @@ class _CategorySheet extends StatefulWidget {
 }
 
 class _CategorySheetState extends State<_CategorySheet> {
-  bool get _isMeta => widget.presetMetaId != null;
-
   late final TextEditingController _name =
       TextEditingController(text: widget.edit?.name ?? '');
-  // Preset meta requires an icon (default backpack); categories don't.
-  late String? _icon = widget.edit?.icon ?? (_isMeta ? '🎒' : null);
+  late String? _icon = widget.edit?.icon;
 
   bool get _canSave => _name.text.trim().isNotEmpty;
 
@@ -72,24 +63,25 @@ class _CategorySheetState extends State<_CategorySheet> {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final store = context.read<AppStore>();
-    if (_isMeta) {
-      store.updatePreset(widget.presetMetaId!, name: name, icon: _icon);
-    } else if (widget.presetId != null) {
+    final PackCategory? result;
+    if (widget.saved) {
       if (widget.edit == null) {
-        store.presetAddCategory(widget.presetId!, name, _icon);
+        result = store.addSavedCategory(name, _icon);
       } else {
-        store.presetUpdateCategory(widget.presetId!, widget.edit!.id,
+        store.updateSavedCategory(widget.edit!.id,
             name: name, icon: _icon, clearIcon: _icon == null);
+        result = widget.edit;
       }
     } else {
       if (widget.edit == null) {
-        store.addCategory(widget.listId!, name, _icon);
+        result = store.addCategory(widget.listId!, name, _icon);
       } else {
         store.updateCategory(widget.listId!, widget.edit!.id,
             name: name, icon: _icon, clearIcon: _icon == null);
+        result = widget.edit;
       }
     }
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(result);
   }
 
   @override
@@ -126,11 +118,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                 Expanded(
                   child: Center(
                     child: Text(
-                      _isMeta
-                          ? 'Edit Preset'
-                          : editing
-                              ? 'Edit Category'
-                              : 'New Category',
+                      editing ? 'Edit Category' : 'New Category',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -165,7 +153,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                       : Text(_icon!, style: const TextStyle(fontSize: 26)),
                 ),
               ),
-              if (_icon != null && !_isMeta)
+              if (_icon != null)
                 TextButton(
                   onPressed: () => setState(() => _icon = null),
                   child: Text('Remove icon',
@@ -173,14 +161,13 @@ class _CategorySheetState extends State<_CategorySheet> {
                 ),
             ],
           ),
-          if (!_isMeta)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Text(
-                'Icon is optional for categories',
-                style: TextStyle(fontSize: 11.5, color: harbor.mut),
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Text(
+              'Icon is optional for categories',
+              style: TextStyle(fontSize: 11.5, color: harbor.mut),
             ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: TextField(
@@ -192,7 +179,7 @@ class _CategorySheetState extends State<_CategorySheet> {
               onSubmitted: (_) => _save(),
               style: TextStyle(fontSize: 15, color: harbor.ink),
               decoration: InputDecoration(
-                hintText: _isMeta ? 'Preset name' : 'Category name',
+                hintText: 'Category name',
                 hintStyle: TextStyle(color: harbor.mut),
                 filled: true,
                 fillColor: harbor.bg,
@@ -223,8 +210,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                   textStyle:
                       const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
-                child: Text(
-                    editing || _isMeta ? 'Save' : 'Create Category'),
+                child: Text(editing ? 'Save' : 'Create Category'),
               ),
             ),
           ),

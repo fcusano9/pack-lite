@@ -88,7 +88,7 @@ void main() {
         'flutter.packlite.data': '''
         {"v":1,"lists":[{"id":"x","name":"Trip","icon":"🧳",
           "items":[{"id":"a","name":"Loose","checked":false}],
-          "categories":[{"id":"c","name":"Clothes","items":[]}]}],"presets":[]}
+          "categories":[{"id":"c","name":"Clothes","items":[]}]}],"categories":[]}
         '''
       });
       final store = AppStore();
