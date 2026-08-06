@@ -27,6 +27,12 @@ feature creep.
   a MethodChannel to `MainActivity.kt`) after destructive changes. See the gotcha below.
 - `screens/` — home, list_screen, category_editor, categories_screen, settings_screen.
 - `sheets/` — new_list, category, icon_picker, category_picker (bottom sheets).
+  `icon_picker` is two-tier since #57: `icons.dart`'s packing shortlist as a **Suggested**
+  row, then the whole emoji set via `emoji_picker_flutter`. That package is configured
+  entirely in Harbor colours (its defaults are a light grey-blue that looks broken in
+  dark mode), its recents tab is off because the Suggested row already fills that job,
+  and its stock search view is replaced — the stock one is a single horizontal strip
+  sized to sit above a keyboard, which leaves most of a sheet empty.
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
 - `motion.dart` — `Motion.menu`, the shared `AnimationStyle` for menus. Applied via
   `PopupMenuButton.popUpAnimationStyle` and `showModalBottomSheet(sheetAnimationStyle:)`.
@@ -75,7 +81,7 @@ font sizes, device-native emoji for icons. List header uses "option C" (count
 chip in the title row + thin progress bar).
 
 **Motion:** transient surfaces you tap *through* — popup menus, long-press action
-sheets, the icon and preset pickers — use `Motion.menu` (140ms in, 90ms out) instead of
+sheets, the icon and saved-category pickers — use `Motion.menu` (140ms in, 90ms out) instead of
 Flutter's 300ms popup / 250ms sheet defaults, which read as sluggish on repeat use. Exit
 is faster than entry: arriving is information, leaving is just clutter. Surfaces you
 *work in* — the new-list and category **forms**, and the reorder sheet — keep the
