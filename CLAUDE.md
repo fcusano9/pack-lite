@@ -27,12 +27,9 @@ feature creep.
   a MethodChannel to `MainActivity.kt`) after destructive changes. See the gotcha below.
 - `screens/` — home, list_screen, category_editor, categories_screen, settings_screen.
 - `sheets/` — new_list, category, icon_picker, category_picker (bottom sheets).
-  `icon_picker` is two-tier since #57: `icons.dart`'s packing shortlist as a **Suggested**
-  row, then the whole emoji set via `emoji_picker_flutter`. That package is configured
-  entirely in Harbor colours (its defaults are a light grey-blue that looks broken in
-  dark mode), its recents tab is off because the Suggested row already fills that job,
-  and its stock search view is replaced — the stock one is a single horizontal strip
-  sized to sit above a keyboard, which leaves most of a sheet empty.
+  `icon_picker` is the whole emoji set via `emoji_picker_flutter` since #57, with
+  `icons.dart`'s packing shortlist injected as the **first tab** and the default view.
+  See the icon picker note below.
 - `widgets/` — list_card, celebration. `sound.dart` / `haptics.dart` / `data_io.dart`.
 - `motion.dart` — `Motion.menu`, the shared `AnimationStyle` for menus. Applied via
   `PopupMenuButton.popUpAnimationStyle` and `showModalBottomSheet(sheetAnimationStyle:)`.
@@ -48,6 +45,27 @@ feature creep.
   documents can hold both). `_buildRows` still renders a header-less loose section when
   `items.isNotEmpty`, purely as a safety net so items can never become invisible if the
   invariant is somehow broken; in normal operation that only fires on a flat list.
+
+## Icon picker
+Any emoji is pickable (#57), via `emoji_picker_flutter`. Four things about that
+integration are deliberate and easy to undo by accident:
+
+- **The shortlist is a `CategoryEmoji(Category.RECENT, …)` prepended to the set** by
+  `buildIconSet`, with `initCategory: Category.RECENT` and the tab icon swapped to a
+  suitcase. Repurposing RECENT is not a hack: `RecentTabBehavior.NONE` stops the package
+  writing to that slot, and `searchEmoji` deliberately **skips RECENT**, so the shortlist
+  can repeat emoji that also live in Travel or Objects without doubling every search hit.
+- **`Emoji.name` is the glyph itself** for shortlist entries. `name` only ever feeds
+  search keywords, and this category is excluded from search — which sidesteps looking
+  each icon up in the package's corpus, where 🚴 🏃 🏊 🛶 are stored in variant forms a
+  literal match misses.
+- **The stock search view is replaced.** It's a single horizontal strip of results with
+  the field *below* it, sized to sit above a keyboard; in a sheet that leaves two thirds
+  empty. Ours is a grid with the field on top, extending the package's `SearchView` so
+  the search logic stays theirs. It also **dedupes by glyph** — the package's own corpus
+  lists 🧳 under both SMILEYS and OBJECTS.
+- **Everything is Harbor-coloured**; the defaults are a light grey-blue that reads as a
+  pale block in dark mode. Backspace is off (no text field to erase into).
 
 ## Saved categories (was: presets)
 `AppStore.savedCategories` is a `List<PackCategory>` living outside any list — reusable

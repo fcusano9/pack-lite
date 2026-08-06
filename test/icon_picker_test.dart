@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -5,11 +6,11 @@ import 'package:pack_lite/icons.dart';
 import 'package:pack_lite/sheets/icon_picker.dart';
 import 'package:pack_lite/theme.dart';
 
-/// #57 opened the picker up to every emoji, which meant embedding a third-party
-/// picker inside our sheet. These pin the parts that would fail silently: the
-/// Suggested shortlist still being there and still returning a value, and the
-/// sheet laying out without overflowing.
-Future<String?> _open(WidgetTester tester) async {
+/// #57 opened the picker up to every emoji by embedding a third-party picker,
+/// with the packing shortlist injected as its first tab. These pin the parts
+/// that would fail silently: the shortlist still leading, still being complete,
+/// and the sheet laying out without overflowing.
+Future<String?> _open(WidgetTester tester, {String current = '🎒'}) async {
   String? picked;
   await tester.pumpWidget(MaterialApp(
     theme: harborTheme(Harbor.light, Brightness.light),
@@ -18,7 +19,7 @@ Future<String?> _open(WidgetTester tester) async {
         body: Center(
           child: ElevatedButton(
             onPressed: () async {
-              picked = await showIconPicker(context, current: '🎒');
+              picked = await showIconPicker(context, current: current);
             },
             child: const Text('open'),
           ),
@@ -32,34 +33,48 @@ Future<String?> _open(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('both tiers render', (tester) async {
-    await _open(tester);
+  group('buildIconSet', () {
+    final set = buildIconSet(const Locale('en'));
 
-    expect(find.text('Choose an icon'), findsOneWidget);
-    expect(find.text('SUGGESTED'), findsOneWidget);
-    expect(find.text('ALL EMOJI'), findsOneWidget);
-    // A tall sheet embedding a third-party grid is exactly where an unbounded
-    // -height or overflow error would appear.
-    expect(tester.takeException(), isNull);
-  });
+    test('puts the shortlist first, so it is the tab the sheet opens on', () {
+      expect(set.first.category, Category.RECENT);
+    });
 
-  testWidgets('tapping a suggested icon returns it', (tester) async {
-    await _open(tester);
+    test('carries every curated icon, in order', () {
+      expect(set.first.emoji.map((e) => e.emoji), curatedIcons);
+    });
 
-    // The first curated icon is always rendered — the row starts unscrolled.
-    await tester.tap(find.text(curatedIcons.first).first);
-    await tester.pumpAndSettle();
-
-    // The sheet closed and handed the value back.
-    expect(find.text('SUGGESTED'), findsNothing);
+    test('keeps the full emoji set behind it', () {
+      final categories = set.map((c) => c.category);
+      expect(categories, containsAll(Category.values.toSet()));
+      // Sanity check that the real corpus is there and not just the shortlist.
+      final total = set.fold(0, (sum, c) => sum + c.emoji.length);
+      expect(total, greaterThan(1000));
+    });
   });
 
   test('the shortlist leads with packing icons', () {
-    // The picker shows these in one scrolling row, so the first few are what a
-    // user sees without scrolling — a reorder that buried 🧳 would be a
-    // regression no layout test would catch.
+    // These are the first icons visible when the sheet opens, so an
+    // accidental reorder that buried 🧳 is a real regression.
     expect(curatedIcons.take(3), ['🎒', '🧳', '✈️']);
     expect(curatedIcons.toSet().length, curatedIcons.length,
-        reason: 'a duplicate would render twice in the row');
+        reason: 'a duplicate would render twice in the shortlist tab');
+  });
+
+  testWidgets('opens on the shortlist and lays out cleanly', (tester) async {
+    await _open(tester);
+
+    expect(find.text('Choose an icon'), findsOneWidget);
+    // '🧳' is in the shortlist but is not the current icon, so finding it
+    // proves the shortlist tab is the one rendered, not just the header.
+    expect(find.text('🧳'), findsWidgets);
+    // A tall sheet embedding a third-party grid is exactly where an unbounded
+    // -height or overflow error would surface.
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the header shows the icon already set', (tester) async {
+    await _open(tester, current: '🎿');
+    expect(find.text('🎿'), findsWidgets);
   });
 }

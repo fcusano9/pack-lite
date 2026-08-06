@@ -1,9 +1,9 @@
-/// The packing-relevant shortlist shown as **Suggested** at the top of the icon
-/// picker. Since #57 it is a fast path, not a limit — the full emoji set sits
-/// below it, so anything the user wants is reachable.
+/// The packing-relevant shortlist, injected as the icon picker's **first tab**
+/// and the one it opens on. Since #57 it is a fast path, not a limit — every
+/// other emoji is one tab or one search away.
 ///
-/// Order matters: the picker renders these as one horizontally scrolling row,
-/// so the leading few are the ones visible without scrolling.
+/// Order matters: these fill the tab's grid top-left first, so the leading few
+/// are what a user sees the instant the sheet opens.
 ///
 /// Milestone 1 note: these render through the device's emoji font (Samsung
 /// style on Galaxy, Apple style on iPhone). Swapping in bundled artwork so

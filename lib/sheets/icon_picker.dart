@@ -1,16 +1,21 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+// Not re-exported by the package's barrel file, but a public path under `lib/`
+// (not `src/`), and the one the picker itself uses to resolve its own set.
+import 'package:emoji_picker_flutter/locales/default_emoji_set_locale.dart';
 import 'package:flutter/material.dart';
 
 import '../icons.dart';
 import '../motion.dart';
 import '../theme.dart';
 
-/// Picks an icon for a list or category.
+/// Picks an icon for a list or category: the whole emoji set (#57), with the
+/// packing shortlist from `icons.dart` as its **first tab and default view**.
 ///
-/// Two tiers: the curated packing icons up top for the common case, and the
-/// full emoji set below for everything else (#57). The curated row is not
-/// redundant — a full picker opens on a category no packing app wants first,
-/// and 🧳 ✈️ 🏖️ should never be more than one tap away.
+/// The shortlist is injected as [Category.RECENT]. That slot is the right one
+/// rather than a hack: with [RecentTabBehavior.NONE] the package never writes
+/// to it, and `searchEmoji` deliberately skips it — so the shortlist can repeat
+/// emoji that also live in Travel or Activities without doubling up every
+/// search result.
 Future<String?> showIconPicker(BuildContext context, {required String current}) {
   return showModalBottomSheet<String>(
     context: context,
@@ -22,6 +27,20 @@ Future<String?> showIconPicker(BuildContext context, {required String current}) 
     builder: (context) => _IconPicker(current: current),
   );
 }
+
+/// The packing shortlist as a category the picker can render.
+///
+/// `name` is only ever used to build search keywords, and this category is
+/// excluded from search, so the glyph doubles as its own name — which also
+/// avoids matching each icon against the package's corpus, where several
+/// (🚴 🏃 🏊 🛶) are stored in variant forms that a literal lookup misses.
+List<CategoryEmoji> buildIconSet(Locale locale) => [
+      CategoryEmoji(
+        Category.RECENT,
+        [for (final icon in curatedIcons) Emoji(icon, icon)],
+      ),
+      ...getDefaultEmojiLocale(locale),
+    ];
 
 class _IconPicker extends StatelessWidget {
   const _IconPicker({required this.current});
@@ -48,50 +67,34 @@ class _IconPicker extends StatelessWidget {
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
-            Text(
-              'Choose an icon',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: harbor.ink,
-              ),
+            // The current icon travels with the title: the package's cells
+            // have no selected state, so this is the only place the sheet can
+            // still say what is already set.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: harbor.tile,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(current, style: const TextStyle(fontSize: 17)),
+                ),
+                const SizedBox(width: 9),
+                Text(
+                  'Choose an icon',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: harbor.ink,
+                  ),
+                ),
+              ],
             ),
-            _label(harbor, 'SUGGESTED'),
-            // One scrolling row, not a grid: as a block the 36 curated icons
-            // took the whole sheet and left the full picker with nothing but
-            // its tab bar. The packing-relevant ones lead, so the common pick
-            // needs no scrolling at all.
-            SizedBox(
-              height: 46,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: curatedIcons.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 6),
-                itemBuilder: (context, index) {
-                  final icon = curatedIcons[index];
-                  return InkWell(
-                    onTap: () => Navigator.of(context).pop(icon),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 46,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: icon == current ? harbor.accentSoft : null,
-                        border: icon == current
-                            ? Border.all(color: harbor.accent, width: 1.5)
-                            : null,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(icon, style: const TextStyle(fontSize: 24)),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 14),
-            Container(height: 1, color: harbor.line),
-            _label(harbor, 'ALL EMOJI'),
+            const SizedBox(height: 10),
             Expanded(
               child: EmojiPicker(
                 onEmojiSelected: (_, emoji) =>
@@ -104,22 +107,6 @@ class _IconPicker extends StatelessWidget {
       ),
     );
   }
-
-  Widget _label(Harbor harbor, String text) => Align(
-        alignment: Alignment.centerLeft,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 16, 8),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.7,
-              color: harbor.mut,
-            ),
-          ),
-        ),
-      );
 
   /// Harbor colours throughout — the package's defaults are a light grey-blue
   /// that looks broken in dark mode.
@@ -135,11 +122,16 @@ class _IconPicker extends StatelessWidget {
         verticalSpacing: 2,
         horizontalSpacing: 2,
       ),
+      // Prepends the packing shortlist as the first tab; see [buildIconSet].
+      emojiSet: buildIconSet,
       categoryViewConfig: CategoryViewConfig(
-        // The Suggested grid above already is the shortlist, so a second
-        // recents strip would just be a worse copy of it.
+        // NONE keeps the package's own recents machinery off the RECENT slot,
+        // leaving it for the shortlist above.
         recentTabBehavior: RecentTabBehavior.NONE,
-        initCategory: Category.TRAVEL,
+        initCategory: Category.RECENT,
+        // A suitcase, not the stock clock — this tab is a shortlist, not a
+        // history.
+        categoryIcons: const CategoryIcons(recentIcon: Icons.luggage),
         backgroundColor: surface,
         indicatorColor: harbor.accent,
         iconColor: harbor.mut,
@@ -191,6 +183,16 @@ class _HarborSearchViewState extends SearchViewState<_HarborSearchView> {
     final searchConfig = widget.config.searchViewConfig;
     final viewConfig = widget.config.emojiViewConfig;
 
+    // The package's own corpus lists some emoji under two categories — 🧳 is in
+    // both SMILEYS and OBJECTS — so an unfiltered result set shows the same
+    // glyph twice. Nothing to do with the shortlist tab, which `searchEmoji`
+    // excludes outright.
+    final seen = <String>{};
+    final unique = [
+      for (final emoji in results)
+        if (seen.add(emoji.emoji)) emoji,
+    ];
+
     return Container(
       color: searchConfig.backgroundColor,
       child: Column(
@@ -219,7 +221,7 @@ class _HarborSearchViewState extends SearchViewState<_HarborSearchView> {
           ),
           Container(height: 1, color: harbor.line),
           Expanded(
-            child: results.isEmpty
+            child: unique.isEmpty
                 ? Center(
                     child: Text('No emoji match that search',
                         style: TextStyle(fontSize: 13, color: harbor.mut)),
@@ -237,9 +239,9 @@ class _HarborSearchViewState extends SearchViewState<_HarborSearchView> {
                           mainAxisSpacing: viewConfig.verticalSpacing,
                           crossAxisSpacing: viewConfig.horizontalSpacing,
                         ),
-                        itemCount: results.length,
+                        itemCount: unique.length,
                         itemBuilder: (context, index) => buildEmoji(
-                          results[index],
+                          unique[index],
                           viewConfig.getEmojiSize(width),
                           viewConfig.getEmojiBoxSize(width),
                         ),
