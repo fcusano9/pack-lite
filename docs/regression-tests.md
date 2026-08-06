@@ -135,13 +135,13 @@
 - [ ] **CAT-2** Tapping a category header **collapses/expands** it (chevron rotates);
   its `packed of total` count shows in the header.
 - [ ] **CAT-3** `···` menu → **Collapse All** / **Expand All** affect every category.
-- [ ] **CAT-4** Long-press a category header opens its menu: **Rename & icon**,
-  **Reorder categories** (only shown when ≥2 categories), **Save category**,
-  **Delete category**.
-- [ ] **CAT-5** **Rename & icon** updates the header; an icon can be added or cleared.
-- [ ] **CAT-6** **Reorder categories** sheet changes category order; it persists.
+- [ ] **CAT-4** Long-press a category header opens its menu: **Rename & Icon**,
+  **Reorder Categories** (only shown when ≥2 categories), **Save Category**,
+  **Delete Category**.
+- [ ] **CAT-5** **Rename & Icon** updates the header; an icon can be added or cleared.
+- [ ] **CAT-6** **Reorder Categories** sheet changes category order; it persists.
   *(Logic guarded by `reorder_categories_test.dart`.)*
-- [ ] **CAT-7** **Delete category** shows a **confirmation** that names how many items
+- [ ] **CAT-7** **Delete Category** shows a **confirmation** that names how many items
   will be deleted (or "This category is empty"); confirming removes the category and
   all its items.
 
@@ -157,7 +157,7 @@
 - [ ] **LOOSE-4** The **PACKED · N** header collapses/hides all packed items and can be
   expanded again. *(Rendering guarded by `loose_items_test.dart`.)*
 - [ ] **LOOSE-5** **Uncategorized is an ordinary category** (#46): long-press offers
-  **Rename & icon**, **Reorder categories**, **Save category** and **Delete category**,
+  **Rename & Icon**, **Reorder Categories**, **Save Category** and **Delete Category**,
   and each works. Renaming it away means the name is simply gone — no section reappears.
 - [ ] **LOOSE-6** It collapses with **Collapse All**, reorders among the other categories,
   and items drag into and out of it like any other. *(Store behaviour and the menu are
@@ -185,7 +185,8 @@
 Replaced presets in #13 — a reusable block is now an ordinary `PackCategory` outside
 any list, and there is no whole-list template (Duplicate covers that).
 
-- [ ] **SAVED-1** Header **+** offers **New Category** and **Add Saved Category**; the
+- [ ] **SAVED-1** Header **+** offers **New Category** and **Add Saved Category** (both
+  with icons — see THEME-7); the
   latter opens a picker listing every saved category with its item count.
 - [ ] **SAVED-2** Choosing one pours its items in and shows a snackbar
   **"Added N items from "<name>""**.
@@ -212,7 +213,7 @@ any list, and there is no whole-list template (Duplicate covers that).
 - [ ] **SAVED-10** In Categories, **swipe** a card (either direction) → Delete with confirm;
   **long-press** to reorder.
 - [ ] **SAVED-11** Deleting a saved category does **not** change lists that already use it.
-- [ ] **SAVED-12** **Save category** from a category's long-press menu copies it into the
+- [ ] **SAVED-12** **Save Category** from a category's long-press menu copies it into the
   library **unchecked**, even if items were ticked; snackbar confirms.
   *(Guarded by `saved_categories_test.dart`.)*
 - [ ] **SAVED-13** Later edits to a list do **not** change a saved category previously taken
@@ -307,6 +308,11 @@ any list, and there is no whole-list template (Duplicate covers that).
 - [ ] **THEME-6** By contrast the **New List** and **Category** sheets, and the **Reorder
   categories** sheet, keep the slower default motion — this is deliberate (see the Harbor
   motion note in `CLAUDE.md`), not an oversight.
+- [ ] **THEME-7** **Both header popup menus carry icons and no dividers** (#16). The `···`
+  menu reads Uncheck All / Collapse All / Expand All / Delete List and the **+** menu reads
+  New Category / Add Saved Category, each with a muted leading icon and even spacing —
+  **no horizontal rules**. Delete List stays red, which is what sets it apart now that the
+  divider above it is gone.
 - [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
   Reinstalling restores the saved theme from the Google account backup, so this only
   reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.

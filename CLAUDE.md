@@ -199,7 +199,7 @@ that's only partly done — annotate it instead.
   caused #22: the loose add row's `roundTop` is `looseUnchecked.isEmpty`, which flips
   exactly once — as the first item is added — so "the keyboard closes when you add an item
   to an empty list". Fix is to always pass a decoration and use `BorderSide.none` for the
-  no-divider case. Both add rows (`list_screen.dart`, `preset_editor.dart`) do this now.
+  no-divider case. Both add rows (`list_screen.dart`, `category_editor.dart`) do this now.
   The item rows still use the `? null :` form; harmless today since they hold no focus,
   but don't put a `TextField` under one. Guarded by `add_item_keyboard_test.dart`, which
   asserts `tester.testTextInput.isVisible` — the reliable way to test keyboard state.

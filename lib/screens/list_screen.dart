@@ -251,7 +251,7 @@ class _ListScreenState extends State<ListScreen> {
             ),
             ListTile(
               leading: Icon(Icons.edit_outlined, size: 20, color: harbor.ink),
-              title: Text('Rename & icon',
+              title: Text('Rename & Icon',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -262,7 +262,7 @@ class _ListScreenState extends State<ListScreen> {
               ListTile(
                 leading:
                     Icon(Icons.swap_vert_rounded, size: 20, color: harbor.ink),
-                title: Text('Reorder categories',
+                title: Text('Reorder Categories',
                     style: TextStyle(fontSize: 14.5, color: harbor.ink)),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -271,7 +271,7 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ListTile(
               leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
-              title: Text('Save category',
+              title: Text('Save Category',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -286,7 +286,7 @@ class _ListScreenState extends State<ListScreen> {
             ListTile(
               leading:
                   Icon(Icons.delete_outline_rounded, size: 20, color: harbor.danger),
-              title: Text('Delete category',
+              title: Text('Delete Category',
                   style: TextStyle(fontSize: 14.5, color: harbor.danger)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
@@ -993,11 +993,17 @@ class _Header extends StatelessWidget {
             },
             itemBuilder: (context) => [
               PopupMenuItem(
-                  value: 'category',
-                  child: Text('New Category', style: menuStyle)),
+                value: 'category',
+                child: _MenuRow(Icons.create_new_folder_outlined,
+                    'New Category', menuStyle),
+              ),
               PopupMenuItem(
-                  value: 'saved',
-                  child: Text('Add Saved Category', style: menuStyle)),
+                value: 'saved',
+                // Pairs with the bookmark_add on "Save Category": that one puts
+                // a category into the library, this one takes one out.
+                child: _MenuRow(
+                    Icons.bookmarks_outlined, 'Add Saved Category', menuStyle),
+              ),
             ],
           ),
           PopupMenuButton<String>(
@@ -1020,7 +1026,6 @@ class _Header extends StatelessWidget {
                 child: _MenuRow(
                     Icons.remove_done_rounded, 'Uncheck All', menuStyle),
               ),
-              const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'collapse',
                 child: _MenuRow(
@@ -1031,7 +1036,6 @@ class _Header extends StatelessWidget {
                 child: _MenuRow(
                     Icons.unfold_more_rounded, 'Expand All', menuStyle),
               ),
-              const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'delete',
                 child: _MenuRow(Icons.delete_outline_rounded, 'Delete List',
@@ -1046,8 +1050,9 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// A menu row: leading icon (muted, or danger-red) + label. Used to give the
-/// list ··· menu clearer visual separation.
+/// A menu row: leading icon (muted, or danger-red) + label. Used by both header
+/// popup menus, so the icon column is what separates the items — #16 dropped the
+/// dividers once the ··· menu was short enough not to need them.
 class _MenuRow extends StatelessWidget {
   const _MenuRow(this.icon, this.label, this.style, {this.danger = false});
 
