@@ -251,7 +251,7 @@ class _ListScreenState extends State<ListScreen> {
             ),
             ListTile(
               leading: Icon(Icons.edit_outlined, size: 20, color: harbor.ink),
-              title: Text('Rename & icon',
+              title: Text('Rename & Icon',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -262,7 +262,7 @@ class _ListScreenState extends State<ListScreen> {
               ListTile(
                 leading:
                     Icon(Icons.swap_vert_rounded, size: 20, color: harbor.ink),
-                title: Text('Reorder categories',
+                title: Text('Reorder Categories',
                     style: TextStyle(fontSize: 14.5, color: harbor.ink)),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -271,7 +271,7 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ListTile(
               leading: Icon(Icons.bookmark_add_outlined, size: 20, color: harbor.ink),
-              title: Text('Save category',
+              title: Text('Save Category',
                   style: TextStyle(fontSize: 14.5, color: harbor.ink)),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -286,7 +286,7 @@ class _ListScreenState extends State<ListScreen> {
             ListTile(
               leading:
                   Icon(Icons.delete_outline_rounded, size: 20, color: harbor.danger),
-              title: Text('Delete category',
+              title: Text('Delete Category',
                   style: TextStyle(fontSize: 14.5, color: harbor.danger)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
@@ -999,7 +999,7 @@ class _Header extends StatelessWidget {
               ),
               PopupMenuItem(
                 value: 'saved',
-                // Pairs with the bookmark_add on "Save category": that one puts
+                // Pairs with the bookmark_add on "Save Category": that one puts
                 // a category into the library, this one takes one out.
                 child: _MenuRow(
                     Icons.bookmarks_outlined, 'Add Saved Category', menuStyle),

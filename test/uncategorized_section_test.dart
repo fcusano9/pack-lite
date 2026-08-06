@@ -162,8 +162,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Previously suppressed because there was no real category behind it.
-      expect(find.text('Rename & icon'), findsOneWidget);
-      expect(find.text('Delete category'), findsOneWidget);
+      expect(find.text('Rename & Icon'), findsOneWidget);
+      expect(find.text('Delete Category'), findsOneWidget);
     });
 
     testWidgets('Collapse All includes it', (tester) async {
