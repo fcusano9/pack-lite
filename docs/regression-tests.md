@@ -185,7 +185,8 @@
 Replaced presets in #13 — a reusable block is now an ordinary `PackCategory` outside
 any list, and there is no whole-list template (Duplicate covers that).
 
-- [ ] **SAVED-1** Header **+** offers **New Category** and **Add Saved Category**; the
+- [ ] **SAVED-1** Header **+** offers **New Category** and **Add Saved Category** (both
+  with icons — see THEME-7); the
   latter opens a picker listing every saved category with its item count.
 - [ ] **SAVED-2** Choosing one pours its items in and shows a snackbar
   **"Added N items from "<name>""**.
@@ -307,6 +308,11 @@ any list, and there is no whole-list template (Duplicate covers that).
 - [ ] **THEME-6** By contrast the **New List** and **Category** sheets, and the **Reorder
   categories** sheet, keep the slower default motion — this is deliberate (see the Harbor
   motion note in `CLAUDE.md`), not an oversight.
+- [ ] **THEME-7** **Both header popup menus carry icons and no dividers** (#16). The `···`
+  menu reads Uncheck All / Collapse All / Expand All / Delete List and the **+** menu reads
+  New Category / Add Saved Category, each with a muted leading icon and even spacing —
+  **no horizontal rules**. Delete List stays red, which is what sets it apart now that the
+  divider above it is gone.
 - [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
   Reinstalling restores the saved theme from the Google account backup, so this only
   reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.
