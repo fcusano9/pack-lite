@@ -83,8 +83,8 @@
   **"Start with categories · optional"** chip row. Each chip shows the category's icon
   when it has one, replaced by a check when selected.
 - [ ] **NEW-2** **Create List** is disabled until the name is non-empty.
-- [ ] **NEW-3** Tapping the icon tile opens the emoji picker; the chosen icon shows on
-  the tile and later on the card. Default icon is the backpack 🎒.
+- [ ] **NEW-3** Tapping the icon tile opens the icon picker; the chosen icon shows on
+  the tile and later on the card. Default icon is the backpack 🎒. See §13 ICON-1…4.
 - [ ] **NEW-4** Creating a list closes the sheet, adds the list to the **top** of Home,
   and **opens it** immediately.
 - [ ] **NEW-5** Selecting one or more category chips seeds the new list with those
@@ -313,6 +313,23 @@ any list, and there is no whole-list template (Duplicate covers that).
   New Category / Add Saved Category, each with a muted leading icon and even spacing —
   **no horizontal rules**. Delete List stays red, which is what sets it apart now that the
   divider above it is gone.
+- [ ] **ICON-1** **Any emoji is pickable** (#57). The sheet opens on a **suitcase tab**,
+  first in the row, holding the packing shortlist — not Smileys, and not a clock icon.
+  The other tabs hold the full emoji set. Picking from any tab closes the sheet and
+  applies the icon.
+- [ ] **ICON-2** The header shows the **icon already set** in a tile beside "Choose an
+  icon" (the grid cells have no selected state, so this is the only such cue).
+- [ ] **ICON-3** **Search** (magnifier, bottom-left) filters as you type, with the field
+  at the **top** and results in a grid; an unmatched query says "No emoji match that
+  search". Verify with something outside the shortlist, e.g. "dog" → 🐕.
+- [ ] **ICON-4** **Search returns no duplicates.** Try **"luggage"**: exactly 🧳 and 🛅.
+  Two suitcases means the dedupe broke — the package's corpus lists 🧳 under both
+  Smileys and Objects. The shortlist tab must not contribute results at all.
+- [ ] **ICON-5** The picker is **Harbor-coloured in both themes** — check dark especially,
+  since `emoji_picker_flutter`'s defaults are a light grey-blue that would show through
+  as a pale block.
+- [ ] **ICON-6** There is **no backspace button** in the bottom bar (the package ships one
+  for its keyboard use case; there's no text field here to erase into).
 - [ ] **THEME-4** A **first-ever launch** defaults to **System**, not Light (issue #23).
   Reinstalling restores the saved theme from the Google account backup, so this only
   reproduces after wiping the backup dataset — see the Auto Backup gotcha in `CLAUDE.md`.
