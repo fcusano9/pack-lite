@@ -1,8 +1,9 @@
 name: Build iOS
 
-# There is no local iOS toolchain (no Xcode on the dev Mac), so for now this
-# workflow is the ONLY thing that compiles the iOS target at all. GitHub's macOS
-# runners ship Xcode, and they're free for public repositories.
+# The dev Mac can build iOS locally since 2026-07-27 (Xcode 26.6, see CLAUDE.md),
+# so this is no longer the only thing that compiles the iOS target — it is the
+# thing that compiles it *without anyone remembering to*. GitHub's macOS runners
+# ship Xcode and are free for public repositories.
 #
 # It does two things:
 #   1. a release compile for a real device, unsigned — proves the iOS target and
@@ -46,14 +47,23 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Same reasoning as the APK workflow: App Store Connect rejects a
+      # CFBundleVersion it has seen before, so it must not come from pubspec's
+      # `+N`. Nothing here is uploadable yet (see below), so this is currently
+      # only about having the mechanism right for when IOS-REL-8 adds
+      # `flutter build ipa`. Counts independently of the APK workflow, which is
+      # fine — the two stores compare against their own histories.
+      - name: Resolve build number
+        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> "$GITHUB_ENV"
+
       # Unsigned because the signing identity lives on Frank's machine and Apple
       # account, not here. The output can't be installed on a device; it exists
       # to prove the build is not broken.
       - name: Build iOS (release, unsigned)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --build-number=$BUILD_NUMBER
 
       - name: Build for simulator
-        run: flutter build ios --simulator --debug
+        run: flutter build ios --simulator --debug --build-number=$BUILD_NUMBER
 
       # Strict: a launch failure fails the build.
       - name: Launch in a simulator and screenshot it
