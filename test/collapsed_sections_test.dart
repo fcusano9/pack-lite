@@ -34,16 +34,32 @@ Future<AppStore> _emptyStore() async {
   return store;
 }
 
-/// One list, one category, one packed item — enough to have a category section
-/// and a Packed section on screen at the same time.
-Future<(AppStore, PackingList, PackCategory)> _packedStore() async {
+/// One list, one category, two items, nothing packed — so there is no Packed
+/// section on screen.
+Future<(AppStore, PackingList, PackCategory)> _unpackedStore() async {
   final store = await _emptyStore();
   final list = store.addList('Trip', '🧳');
   final category = store.addCategory(list.id, 'Clothes', null);
   store.addItem(list.id, category.id, 'Socks');
   store.addItem(list.id, category.id, 'Shirt');
+  return (store, list, category);
+}
+
+/// The same, with 'Shirt' packed — a category section and a Packed section on
+/// screen at the same time.
+Future<(AppStore, PackingList, PackCategory)> _packedStore() async {
+  final (store, list, category) = await _unpackedStore();
   store.setItemChecked(list.id, category.id, category.items.last.id, true);
   return (store, list, category);
+}
+
+/// Drives the ··· menu's Collapse All, so tests exercise the screen's decision
+/// about what "all" covers rather than restating it.
+Future<void> _collapseAll(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Collapse All'));
+  await tester.pumpAndSettle();
 }
 
 /// Lets the un-awaited writes inside the store's setters land in the mock
@@ -54,17 +70,35 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('collapse all (#62)', () {
-    test('collapses the Packed section along with the categories', () async {
+    testWidgets('collapses the Packed section along with the categories',
+        (tester) async {
       final (store, list, category) = await _packedStore();
+      await tester.pumpWidget(_wrap(store, list.id));
 
-      store.setCollapsedAll(list.id, {
-        ...list.categories.map((c) => c.id),
-        AppStore.packedSectionKey,
-      });
+      await _collapseAll(tester);
 
       expect(store.isCollapsed(list.id, category.id), isTrue);
       expect(store.isCollapsed(list.id, AppStore.packedSectionKey), isTrue,
           reason: 'Packed is a section the user can fold like any other');
+    });
+
+    testWidgets('leaves Packed alone when nothing is packed yet',
+        (tester) async {
+      final (store, list, _) = await _unpackedStore();
+      await tester.pumpWidget(_wrap(store, list.id));
+
+      await _collapseAll(tester);
+
+      expect(store.isCollapsed(list.id, AppStore.packedSectionKey), isFalse,
+          reason: 'there is no Packed section on screen to collapse');
+
+      // So the first item packed afterwards is visible rather than folded away
+      // into a section the user never saw.
+      final category = store.byId(list.id)!.categories.single;
+      store.setItemChecked(list.id, category.id, category.items.first.id, true);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Socks'), findsOneWidget);
     });
 
     test('expand all reopens the Packed section too', () async {
@@ -86,10 +120,7 @@ void main() {
       expect(find.text('Socks'), findsOneWidget);
       expect(find.text('Shirt'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Collapse All'));
-      await tester.pumpAndSettle();
+      await _collapseAll(tester);
 
       expect(find.text('Socks'), findsNothing);
       expect(find.text('Shirt'), findsNothing,

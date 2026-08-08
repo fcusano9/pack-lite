@@ -7,6 +7,11 @@ feature creep.
 ## Workflow
 - Changes land via pull request, never direct commits to `main` — branch, push,
   open a PR for review.
+- **Keep PR descriptions short and to the point.** A few sentences or a short
+  bullet list: what changed, and anything the reviewer genuinely has to decide
+  on. No multi-paragraph write-ups, no section headings per issue, no restating
+  the diff or narrating how it was tested — the diff and the CI run already say
+  that. Detail belongs in the commit message and the code comments.
 
 ## Commands
 - `flutter pub get` — deps

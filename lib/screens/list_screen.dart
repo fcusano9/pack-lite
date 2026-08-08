@@ -467,10 +467,12 @@ class _ListScreenState extends State<ListScreen> {
               onAddSavedCategory: _addSavedCategory,
               onUncheckAll: () => _uncheckAll(list),
               // "All" includes the Packed section, which is a section the user
-              // can fold like any other even though it isn't a category (#62).
+              // can fold like any other even though it isn't a category (#62) —
+              // but only while it's on screen. Collapsing a section that isn't
+              // there yet would hide the first item the user packs afterwards.
               onCollapseAll: () => store.setCollapsedAll(list.id, {
                 ...list.categories.map((category) => category.id),
-                AppStore.packedSectionKey,
+                if (list.packedItems > 0) AppStore.packedSectionKey,
               }),
               onExpandAll: () => store.setCollapsedAll(list.id, const {}),
               onDelete: () => _deleteList(list),
