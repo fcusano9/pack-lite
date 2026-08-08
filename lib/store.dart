@@ -11,6 +11,7 @@ import 'seed.dart';
 const _dataKey = 'packlite.data';
 const _themeKey = 'packlite.theme';
 const _vibrationKey = 'packlite.vibration';
+const _collapsedKey = 'packlite.collapsed';
 
 /// Single source of truth for all app data. The full model is tiny (a few KB
 /// of text even for heavy users), so it lives in memory and is persisted as
@@ -24,6 +25,19 @@ class AppStore extends ChangeNotifier {
   final List<PackCategory> savedCategories = [];
   ThemeMode themeMode = ThemeMode.system;
   VibrationLevel vibration = VibrationLevel.medium;
+
+  /// Which sections each list has collapsed, keyed by list id (#61). Values are
+  /// category ids plus [packedSectionKey].
+  ///
+  /// This is view state, not list data, so it lives in its own preferences key
+  /// rather than in the `v2` document — an export describes what you're packing,
+  /// not which headers you happened to have folded shut.
+  final Map<String, Set<String>> _collapsed = {};
+
+  /// Stands in for the Packed section, which is rendered from every list's
+  /// checked items rather than being a [PackCategory], so it has no id of its
+  /// own. [newId] produces base-36 digits only, so this can never collide.
+  static const packedSectionKey = 'packed-section';
 
   SharedPreferences? _prefs;
 
@@ -41,6 +55,8 @@ class AppStore extends ChangeNotifier {
     vibration = VibrationLevel.values.asNameMap()[vibrationName] ?? VibrationLevel.medium;
     Haptics.level = vibration;
 
+    _loadCollapsed(_prefs!.getString(_collapsedKey));
+
     final raw = _prefs!.getString(_dataKey);
     if (raw == null) {
       lists.addAll(buildSeedLists());
@@ -49,6 +65,62 @@ class AppStore extends ChangeNotifier {
     } else {
       _loadFrom(raw, replace: true);
     }
+    _pruneCollapsed();
+  }
+
+  // ---- collapsed sections ----
+
+  void _loadCollapsed(String? raw) {
+    if (raw == null) return;
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      for (final entry in json.entries) {
+        final keys = (entry.value as List<dynamic>).cast<String>().toSet();
+        if (keys.isNotEmpty) _collapsed[entry.key] = keys;
+      }
+    } catch (_) {
+      // Only view state: an unreadable document just means every section
+      // starts expanded, which is the same as a first run.
+      _collapsed.clear();
+    }
+  }
+
+  /// Drops collapse state for lists that no longer exist, so deleting and
+  /// re-importing can't leave the map growing forever.
+  void _pruneCollapsed() {
+    final live = lists.map((list) => list.id).toSet();
+    _collapsed.removeWhere((listId, _) => !live.contains(listId));
+  }
+
+  Future<void> _persistCollapsed() async {
+    await _prefs?.setString(
+        _collapsedKey,
+        jsonEncode(
+            _collapsed.map((listId, keys) => MapEntry(listId, keys.toList()))));
+  }
+
+  bool isCollapsed(String listId, String key) =>
+      _collapsed[listId]?.contains(key) ?? false;
+
+  void setCollapsed(String listId, String key, bool collapsed) {
+    final keys = _collapsed.putIfAbsent(listId, () => <String>{});
+    final changed = collapsed ? keys.add(key) : keys.remove(key);
+    if (keys.isEmpty) _collapsed.remove(listId);
+    if (!changed) return;
+    notifyListeners();
+    _persistCollapsed();
+  }
+
+  /// Sets a list's collapsed sections wholesale — the ··· menu's Collapse All
+  /// and Expand All. An empty [keys] expands everything.
+  void setCollapsedAll(String listId, Set<String> keys) {
+    if (keys.isEmpty) {
+      _collapsed.remove(listId);
+    } else {
+      _collapsed[listId] = {...keys};
+    }
+    notifyListeners();
+    _persistCollapsed();
   }
 
   /// Parses a data document into memory. Used for first load and for import.
@@ -100,6 +172,10 @@ class AppStore extends ChangeNotifier {
   (int, int)? importJson(String raw, {required bool replace}) {
     final result = _loadFrom(raw, replace: replace);
     if (result != null) {
+      // A replacing import retires the old lists, and with them their collapse
+      // state; imported lists arrive with every section expanded.
+      _pruneCollapsed();
+      _persistCollapsed();
       notifyListeners();
       _persist();
     }
@@ -109,8 +185,10 @@ class AppStore extends ChangeNotifier {
   Future<void> deleteAllData() async {
     lists.clear();
     savedCategories.clear();
+    _collapsed.clear();
     notifyListeners();
     await _persist();
+    await _persistCollapsed();
     // Ask Android to replace its cloud snapshot now that everything is gone,
     // so reinstalling can't restore the lists the user just deleted.
     await BackupSync.dataChanged();
@@ -164,6 +242,7 @@ class AppStore extends ChangeNotifier {
 
   void deleteList(String id) {
     _mutate(() => lists.removeWhere((list) => list.id == id));
+    if (_collapsed.remove(id) != null) _persistCollapsed();
   }
 
   PackingList? duplicateList(String id) {
