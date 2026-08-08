@@ -193,9 +193,24 @@ check knockout and lose the mark. Keep those classes on the shapes.
 
 ## Releasing
 `docs/release-checklist.md` — per-store checklists for Google Play and the App Store.
-Note Play needs an `.aab` (`flutter build appbundle`) and nothing in this repo builds
-one yet, and that build numbers must increase on every upload while every CI build is
-still `versionCode 2005`. Release process stays out of the README by preference.
+Release process stays out of the README by preference.
+
+**Build numbers come from `github.run_number`, not `pubspec.yaml`** (#GP-3/REL-5). Both
+stores reject a build number they have already accepted, so a fixed `+N` in pubspec would
+force a manual bump before every upload. CI passes `--build-number` to every build; pubspec's
+`+5` now only affects local builds. Consequences:
+
+- The **`.aab` versionCode is the run number as-is** (Play needs a bundle, and a bundle has
+  one versionCode, no ABI split). The **arm64 APK is +2000** on top, from `--split-per-abi`.
+  They are different numbers for different channels and that is correct — Play compares only
+  against previous Play uploads.
+- The two workflows **count independently** (APK vs iOS), which is fine: each store tracks
+  its own history.
+- **GitHub resets `run_number` if a workflow file is renamed**, which would start handing
+  out numbers a store has already accepted. If you rename one, add a floor:
+  `$(( ${{ github.run_number }} + 1000 ))`.
+- A CI step asserts the arm64 APK's versionCode is `run_number + 2000` and **fails the
+  build** if not — otherwise a silently-dropped flag would only surface at upload time.
 
 **Keep it current.** Tick items off as they're genuinely finished, with the date and a
 PR or issue reference, and update any item whose facts have changed. A checklist that

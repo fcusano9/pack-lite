@@ -42,12 +42,20 @@ These are hard blockers. Neither store will accept a build without them.
       **<https://github.com/fcusano9/pack-lite/issues>** — accepted by both stores, and
       linked from the site's landing page.
 - [ ] **REL-4 · Decide the public version number.** `pubspec.yaml` is currently
-      `1.0.0+5`. The `+N` build number must increase on **every** upload to either
-      store, forever — see REL-5.
-- [ ] **REL-5 · Automate the build number.** Still unresolved. Every CI build is
-      currently `versionCode 2005`, and both stores reject re-used build numbers,
-      so today each upload needs a manual bump. Deriving it from
-      `github.run_number` was proposed and never decided.
+      `1.0.0+5`; the **`1.0.0`** part is the decision. The `+5` no longer matters for
+      store uploads — REL-5 overrides it in CI — so this is purely "what do we call
+      the first public release".
+- [x] **REL-5 · Automate the build number.** *Done 2026-08-06 (PR #60).* CI passes
+      `--build-number=${{ github.run_number }}` to every build, so no upload can reuse
+      a number and no manual bump is needed. The `.aab` versionCode is the run number
+      as-is; the arm64 APK is +2000 on top of it (ABI offset from `--split-per-abi`).
+      A CI step asserts this and fails the build if the flag ever stops applying.
+      **Two things to know:** the APK and iOS workflows count independently (fine — the
+      stores track separately), and GitHub resets `run_number` if a workflow file is
+      **renamed**, which would re-issue numbers a store has already taken. Renaming one
+      means adding a floor — see the Releasing note in `CLAUDE.md`.
+      *iOS inherits this automatically once IOS-REL-8 adds `flutter build ipa`; the
+      flag is already wired into that workflow, but nothing there is uploadable yet.*
 - [ ] **REL-6 · Full regression pass** on real hardware — `docs/regression-tests.md`,
       at minimum every P0.
       *Partial (2026-07-27):* §17 IOS-1, IOS-4 (import only), IOS-5 and IOS-8 pass in the
@@ -71,13 +79,16 @@ These are hard blockers. Neither store will accept a build without them.
 
 ### Build — the real gap
 
-- [ ] **GP-3** **Play requires an Android App Bundle (`.aab`), not an APK.** This repo
-      has never built one — CI produces `--split-per-abi` APKs and nothing anywhere
-      runs `flutter build appbundle`. Needs adding:
+- [x] **GP-3 · Build an Android App Bundle.** *Done 2026-08-06 (PR #60).* Play will not
+      take an APK. The **Build APK** workflow now produces both on every run: the arm64
+      APK for sideloading (artifact `pack-lite-apk`) and the bundle for Play (artifact
+      `pack-lite-aab`), signed with the same keystore. Locally:
       ```sh
       flutter build appbundle --release
       ```
-      Output: `build/app/outputs/bundle/release/app-release.aab`.
+      Output: `build/app/outputs/bundle/release/app-release.aab` (~56 MB — that is all
+      ABIs and densities in one file; Play splits it per device on download, so what
+      users actually fetch is closer to the 20 MB arm64 APK).
 - [ ] **GP-4** Decide on **Play App Signing** (effectively mandatory for new apps).
       Google holds the real signing key; `packlite-release.jks` becomes the *upload*
       key. Consequence worth understanding: the APKs users get from Play are signed by

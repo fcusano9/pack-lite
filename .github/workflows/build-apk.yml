@@ -1,7 +1,8 @@
 name: Build APK
 
-# Builds a release-signed arm64 APK on every pull request and on every push to
-# main (i.e. when a PR is merged). Download it from the run's "Artifacts".
+# Builds a release-signed arm64 APK (sideloading) and an Android App Bundle
+# (the only format Google Play accepts) on every pull request and on every push
+# to main. Download either from the run's "Artifacts".
 on:
   pull_request:
   push:
@@ -65,12 +66,31 @@ jobs:
             echo "storeFile=packlite-release.jks"
           } > android/key.properties
 
-      # Use --split-per-abi so the arm64 APK's versionCode carries Flutter's ABI
-      # offset (arm64 => +2000, e.g. 2005 for pubspec 1.0.0+5). Local dev builds
+      # Both stores reject a build number they have already seen, so it cannot
+      # come from pubspec's `+N` — that would make every CI build identical and
+      # force a manual bump before each upload (REL-5). `run_number` increments
+      # per run of *this* workflow and never repeats.
+      #
+      # Two things to know about it: it is independent of the iOS workflow's
+      # counter (fine — the stores track separately), and GitHub resets it if
+      # this file is renamed, which would start handing out numbers the stores
+      # have already accepted. Renaming this workflow means setting a floor
+      # here, e.g. `$(( ${{ github.run_number }} + 1000 ))`.
+      - name: Resolve build number
+        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      # --split-per-abi so the arm64 APK's versionCode carries Flutter's ABI
+      # offset (arm64 => +2000, so build number 76 => 2076). Local dev builds
       # use --split-per-abi too, so the codes match and a CI APK installs right
       # over a locally-installed build instead of being blocked as a downgrade.
       - name: Build release APK
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --build-number=$BUILD_NUMBER
+
+      # Play will not take an APK. The bundle has a single versionCode with no
+      # ABI offset, so it is the build number as-is — unrelated to the APK's,
+      # and compared only against previous Play uploads.
+      - name: Build release App Bundle
+        run: flutter build appbundle --release --build-number=$BUILD_NUMBER
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -78,3 +98,28 @@ jobs:
           name: pack-lite-apk
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error
+
+      - name: Upload App Bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-lite-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      # Guards the whole point of REL-5: if --build-number ever stops applying,
+      # every artifact silently falls back to pubspec's `+N` and store uploads
+      # start colliding again — which you would only discover at upload time.
+      # Checking the APK covers the bundle too, since it is the same flag on the
+      # same build; the APK is the one `aapt2` can read directly.
+      - name: Verify the build number reached the artifacts
+        run: |
+          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)
+          EXPECTED=$((BUILD_NUMBER + 2000))  # arm64's ABI offset from --split-per-abi
+          ACTUAL=$("$AAPT2" dump badging \
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
+          echo "arm64 APK versionCode=$ACTUAL (expected $EXPECTED)"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::--build-number did not apply. Store uploads would reuse a build number and be rejected."
+            exit 1
+          fi
