@@ -17,8 +17,14 @@ feature creep.
 ## Architecture (lib/)
 - `store.dart` — `AppStore extends ChangeNotifier`, the single source of truth.
   Whole model persisted as ONE JSON doc in shared_preferences on every mutation.
-  Keys: `packlite.data`, `packlite.theme`, `packlite.vibration`. Seeds sample
-  lists + saved categories on first launch. The document is `v2`
+  Keys: `packlite.data`, `packlite.theme`, `packlite.vibration`,
+  `packlite.collapsed`. Seeds sample lists + saved categories on first launch.
+  `packlite.collapsed` is `{listId: [sectionKey, …]}` — which headers the user has
+  folded shut (#61), with `AppStore.packedSectionKey` standing in for the Packed
+  section, which is rendered rather than being a real `PackCategory`. It's view
+  state, so it lives in its own key and stays **out** of the exported document;
+  it's pruned against the live lists on load, on import and on list delete. The
+  document is `v2`
   (`{v, exportedAt, lists, categories}`); `v1`'s `presets` key is dead and not
   migrated — see Saved categories below.
 - `models.dart` — `Item`, `PackCategory`, `PackingList` (+ toJson/fromJson).
@@ -202,7 +208,8 @@ that's only partly done — annotate it instead.
   for the check-off feel.
 - **Android Auto Backup silently restores old data on reinstall, so reinstall-based
   testing lies to you.** `android:allowBackup` isn't declared, so it defaults to `true`:
-  all of `shared_prefs/` (`packlite.data`, `packlite.theme`, `packlite.vibration` — every
+  all of `shared_prefs/` (`packlite.data`, `packlite.theme`, `packlite.vibration`,
+  `packlite.collapsed` — every
   byte the app owns) is uploaded to the user's Google account roughly daily and restored
   when the app is installed again. Two bugs were filed against this before it was
   understood: "fresh install defaults to light theme" (#23, not a theme bug — the restored

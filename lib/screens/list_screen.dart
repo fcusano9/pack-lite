@@ -80,8 +80,8 @@ class _PackedItemRow extends _Row {
 }
 
 class _ListScreenState extends State<ListScreen> {
-  final Set<String> _collapsed = {};
-  bool _packedCollapsed = false;
+  // Collapsed sections live in the store, not here, so they survive leaving the
+  // list and coming back (#61).
   // Inline-add state: [_adding] is whether a row is open; [_addCategoryId] is which
   // bucket it targets (null = the loose section).
   bool _adding = false;
@@ -355,7 +355,7 @@ class _ListScreenState extends State<ListScreen> {
     // Categories.
     for (final category in list.categories) {
       rows.add(_CategoryHeaderRow(category));
-      if (!_collapsed.contains(category.id)) {
+      if (!_store.isCollapsed(widget.listId, category.id)) {
         final unchecked = category.items.where((item) => !item.checked).toList();
         for (final item in unchecked) {
           rows.add(_ItemRow(category, item));
@@ -368,7 +368,7 @@ class _ListScreenState extends State<ListScreen> {
     final packedCount = list.packedItems;
     if (packedCount > 0) {
       rows.add(_PackedHeaderRow(packedCount));
-      if (!_packedCollapsed) {
+      if (!_store.isCollapsed(widget.listId, AppStore.packedSectionKey)) {
         // Unlabelled, and only ever present on a flat list (see above).
         final loosePacked = list.items.where((item) => item.checked).toList();
         for (var index = 0; index < loosePacked.length; index++) {
@@ -466,9 +466,13 @@ class _ListScreenState extends State<ListScreen> {
                   showCategorySheet(context, listId: widget.listId),
               onAddSavedCategory: _addSavedCategory,
               onUncheckAll: () => _uncheckAll(list),
-              onCollapseAll: () => setState(() =>
-                  _collapsed.addAll(list.categories.map((category) => category.id))),
-              onExpandAll: () => setState(_collapsed.clear),
+              // "All" includes the Packed section, which is a section the user
+              // can fold like any other even though it isn't a category (#62).
+              onCollapseAll: () => store.setCollapsedAll(list.id, {
+                ...list.categories.map((category) => category.id),
+                AppStore.packedSectionKey,
+              }),
+              onExpandAll: () => store.setCollapsedAll(list.id, const {}),
               onDelete: () => _deleteList(list),
             ),
             ProgressBar(
@@ -529,7 +533,7 @@ class _ListScreenState extends State<ListScreen> {
 
     switch (row) {
       case _CategoryHeaderRow(:final category):
-        final collapsed = _collapsed.contains(category.id);
+        final collapsed = _store.isCollapsed(widget.listId, category.id);
         final total = category.items.length;
         final packed = category.items.where((item) => item.checked).length;
         return Container(
@@ -542,11 +546,8 @@ class _ListScreenState extends State<ListScreen> {
                 : const BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: InkWell(
-            onTap: () => setState(() {
-              collapsed
-                  ? _collapsed.remove(category.id)
-                  : _collapsed.add(category.id);
-            }),
+            onTap: () =>
+                _store.setCollapsed(widget.listId, category.id, !collapsed),
             onLongPress: () => _categoryMenu(list, category),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(15, 13, 15, 7),
@@ -738,11 +739,14 @@ class _ListScreenState extends State<ListScreen> {
         );
 
       case _PackedHeaderRow(:final count):
+        final packedCollapsed =
+            _store.isCollapsed(widget.listId, AppStore.packedSectionKey);
         return Container(
           key: ValueKey(row.key),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 2),
           child: InkWell(
-            onTap: () => setState(() => _packedCollapsed = !_packedCollapsed),
+            onTap: () => _store.setCollapsed(
+                widget.listId, AppStore.packedSectionKey, !packedCollapsed),
             child: Row(
               children: [
                 Text(
@@ -756,7 +760,7 @@ class _ListScreenState extends State<ListScreen> {
                 ),
                 const Spacer(),
                 AnimatedRotation(
-                  turns: _packedCollapsed ? -0.25 : 0,
+                  turns: packedCollapsed ? -0.25 : 0,
                   duration: const Duration(milliseconds: 180),
                   child: Icon(Icons.keyboard_arrow_down_rounded,
                       size: 17, color: harbor.mut),
