@@ -1,39 +1,47 @@
 # Pack Lite
 
-A simple, fast, offline packing-list app for trips and activities. Built to sit
-between heavyweight packing apps (which force trip dates and other complexity)
-and plain to-do apps (which lack packing-specific features like reusable
-categories and a one-tap "uncheck all" to reset a list for the next trip).
+A simple, fast, offline packing list for trips and activities. It sits between
+heavyweight packing apps, which make you commit to trip dates and other
+structure, and plain to-do apps, which have nothing built for packing — no
+reusable categories, no one-tap reset for the next trip.
 
-No account, no ads, no servers of our own — the app never sends your data
-anywhere, and works fully offline.
-
-> **Note on Android backups:** Android's own Auto Backup is left enabled, so the
-> app's data is included in your device's Google account backup and comes back
-> automatically when you set up a new phone. That's a system feature, not
-> something Pack Lite uploads. Deleting all data in Settings clears the backed-up
-> copy too.
+No account, no ads, no tracking, and no servers of our own. Your lists live on
+your device and the app works fully offline. The
+[Privacy Policy](https://fcusano9.github.io/pack-lite/privacy-policy) covers the
+few ways data can leave your phone, all of which you control: your own device
+backup, the export file, and the links out to GitHub.
 
 ## Features
 
-- **Packing lists** organized into collapsible categories, with big checkboxes
-  and a live progress bar per list.
-- **Check-off** with haptics and a sound; packed items sink to a "Packed"
-  section and a small celebration fires when everything's packed.
-- **Reuse** — duplicate a list (the copy starts fully unpacked, ready for the next
-  trip), or **uncheck all** to reset one in place.
-- **Saved categories** — reusable sets of items (e.g. Toiletries); drop one into
-  any list, save a category from a list to reuse later, or start a new list from
-  a few of them.
-- **Import / export** all data as a single JSON file for backup or moving phones.
-- Light / dark themes (follows system), adjustable vibration strength, and text
-  that scales with the system font-size setting.
+- **Lists organised into categories** you can collapse, with large checkboxes
+  and a live progress bar. Collapsed sections stay collapsed next time.
+- **Satisfying check-off** — a haptic tick and a pop, then the item sinks into a
+  Packed section. A small celebration fires when a list is finished.
+- **Saved categories** — keep reusable blocks like Toiletries, drop one into any
+  list, save a category out of a list to use again, or start a new list from
+  several at once.
+- **Reset for the next trip** — duplicate a list (the copy starts fully
+  unpacked) or uncheck everything in place.
+- **Any emoji as an icon** for a list or category, with the packing-relevant
+  ones one tap away.
+- **Export and import** everything as a single JSON file, for a backup or to
+  move to a new phone.
+- Light and dark themes that follow the system, adjustable vibration strength,
+  and text that scales with your system font size.
 
 ## Design language
 
 The UI follows a design language called **Harbor**: cool grey-blue neutrals, one
 deep cobalt accent for actions and in-progress state, and green reserved for the
 "done" state.
+
+## Privacy and licence
+
+- [Privacy Policy](https://fcusano9.github.io/pack-lite/privacy-policy)
+- [Terms of Service](https://fcusano9.github.io/pack-lite/terms-of-service)
+- The source is [MIT licensed](LICENSE). That covers the code — it doesn't grant
+  any right to the Pack Lite name or app icon, so please don't publish a build
+  under this app's branding.
 
 ## Tech
 
@@ -46,31 +54,13 @@ deep cobalt accent for actions and in-progress state, and green reserved for the
 
 ```sh
 flutter pub get
-flutter run                                    # run on a connected device or emulator
+flutter run                                    # a connected device or emulator
 flutter build apk --release --split-per-abi    # release APKs
 ```
 
-### iOS
-
-Android is the platform actively tested on hardware. The iOS target builds, but is
-**not yet verified on a device** — CI compiles it on every pull request (release,
-unsigned) and launches it in a simulator to confirm it starts, publishing a screenshot
-as a build artifact.
-
-```sh
-flutter build ios --release --no-codesign    # compile check, no signing identity needed
-flutter build ios --simulator --debug        # runnable in the iOS Simulator
-```
-
-Both need a full Xcode install (free from the App Store) plus CocoaPods; the Command
-Line Tools alone aren't enough.
-
-### Signing
-
-Release builds are signed with a keystore that is **not** in this repo
-(`android/app/packlite-release.jks` and `android/key.properties` are
-git-ignored). Keep a secure backup of the keystore — it's required to publish
-updates that install over existing installs.
+Android is the platform tested on real hardware. iOS builds and runs in the
+simulator, and CI compiles it and launches it on every pull request, but it has
+not been tried on a physical device yet.
 
 ## Support
 
