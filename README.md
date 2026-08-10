@@ -22,18 +22,10 @@ backup, the export file, and the links out to GitHub.
   several at once.
 - **Reset for the next trip** — duplicate a list (the copy starts fully
   unpacked) or uncheck everything in place.
-- **Any emoji as an icon** for a list or category, with the packing-relevant
-  ones one tap away.
 - **Export and import** everything as a single JSON file, for a backup or to
   move to a new phone.
 - Light and dark themes that follow the system, adjustable vibration strength,
   and text that scales with your system font size.
-
-## Design language
-
-The UI follows a design language called **Harbor**: cool grey-blue neutrals, one
-deep cobalt accent for actions and in-progress state, and green reserved for the
-"done" state.
 
 ## Privacy and licence
 
@@ -57,10 +49,6 @@ flutter pub get
 flutter run                                    # a connected device or emulator
 flutter build apk --release --split-per-abi    # release APKs
 ```
-
-Android is the platform tested on real hardware. iOS builds and runs in the
-simulator, and CI compiles it and launches it on every pull request, but it has
-not been tried on a physical device yet.
 
 ## Support
 
