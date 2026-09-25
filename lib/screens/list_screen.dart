@@ -88,6 +88,11 @@ class _ListScreenState extends State<ListScreen> {
   String? _addCategoryId;
   final TextEditingController _addController = TextEditingController();
   final FocusNode _addFocus = FocusNode();
+  // Inline-rename state: the item whose name is currently a text field, and the
+  // category it lives in (null = the loose section).
+  Item? _renamingItem;
+  PackCategory? _renamingCategory;
+  final TextEditingController _renameController = TextEditingController();
   final Set<String> _pendingCheck = {};
   bool _wasReady = false;
 
@@ -102,6 +107,7 @@ class _ListScreenState extends State<ListScreen> {
   void dispose() {
     _addController.dispose();
     _addFocus.dispose();
+    _renameController.dispose();
     super.dispose();
   }
 
@@ -158,12 +164,45 @@ class _ListScreenState extends State<ListScreen> {
 
   /// Opens the inline add row for [category] (null = loose section).
   void _openAdd(PackCategory? category) {
+    _commitRename();
     _commitAdd(keepOpen: false);
     setState(() {
       _adding = true;
       _addCategoryId = category?.id;
     });
     _addController.clear();
+  }
+
+  // ---- inline rename ----
+
+  /// Turns [item]'s name into a text field in place. Tapping the name renames;
+  /// only the checkbox packs.
+  void _startRename(PackCategory? category, Item item) {
+    _commitRename();
+    _commitAdd(keepOpen: false);
+    _renameController.value = TextEditingValue(
+      text: item.name,
+      selection: TextSelection.collapsed(offset: item.name.length),
+    );
+    setState(() {
+      _renamingItem = item;
+      _renamingCategory = category;
+    });
+  }
+
+  /// Saves the open rename, if any. An emptied name keeps the old one rather
+  /// than deleting the item — swiping left is the way to delete.
+  void _commitRename() {
+    final item = _renamingItem;
+    if (item == null) return;
+    final name = _renameController.text.trim();
+    if (name.isNotEmpty && name != item.name) {
+      _store.renameItem(widget.listId, _renamingCategory?.id, item.id, name);
+    }
+    setState(() {
+      _renamingItem = null;
+      _renamingCategory = null;
+    });
   }
 
   // ---- dialogs & menus ----
@@ -455,74 +494,81 @@ class _ListScreenState extends State<ListScreen> {
     _maybeCelebrate(list);
     final rows = _buildRows(list);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(
-              list: list,
-              onEdit: () => showNewListSheet(context, edit: list),
-              onNewCategory: () =>
-                  showCategorySheet(context, listId: widget.listId),
-              onAddSavedCategory: _addSavedCategory,
-              onUncheckAll: () => _uncheckAll(list),
-              // "All" includes the Packed section, which is a section the user
-              // can fold like any other even though it isn't a category (#62) —
-              // but only while it's on screen. Collapsing a section that isn't
-              // there yet would hide the first item the user packs afterwards.
-              onCollapseAll: () => store.setCollapsedAll(list.id, {
-                ...list.categories.map((category) => category.id),
-                if (list.packedItems > 0) AppStore.packedSectionKey,
-              }),
-              onExpandAll: () => store.setCollapsedAll(list.id, const {}),
-              onDelete: () => _deleteList(list),
-            ),
-            ProgressBar(
-              progress: list.progress,
-              ready: list.isReady,
-              height: 3,
-              rounded: false,
-            ),
-            if (list.isReady) const _AllPackedCard(),
-            Expanded(
-              child: (list.items.isEmpty &&
-                      list.categories.isEmpty &&
-                      !_adding)
-                  ? _EmptyList(
-                      onAddItem: () => _openAdd(null),
-                      onNewCategory: () =>
-                          showCategorySheet(context, listId: widget.listId),
-                    )
-                  : ReorderableListView.builder(
-                      padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
-                      buildDefaultDragHandles: false,
-                      itemCount: rows.length,
-                      onReorderStart: (_) => Haptics.tap(),
-                      proxyDecorator: (child, index, animation) =>
-                          Material(
-                        type: MaterialType.transparency,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: harbor.card,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.18),
-                                blurRadius: 14,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+    // Leaving the screen mid-rename (back button, iOS back swipe) saves the
+    // edit rather than dropping it; nothing else would fire to commit it.
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _commitRename();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              _Header(
+                list: list,
+                onEdit: () => showNewListSheet(context, edit: list),
+                onNewCategory: () =>
+                    showCategorySheet(context, listId: widget.listId),
+                onAddSavedCategory: _addSavedCategory,
+                onUncheckAll: () => _uncheckAll(list),
+                // "All" includes the Packed section, which is a section the user
+                // can fold like any other even though it isn't a category (#62) —
+                // but only while it's on screen. Collapsing a section that isn't
+                // there yet would hide the first item the user packs afterwards.
+                onCollapseAll: () => store.setCollapsedAll(list.id, {
+                  ...list.categories.map((category) => category.id),
+                  if (list.packedItems > 0) AppStore.packedSectionKey,
+                }),
+                onExpandAll: () => store.setCollapsedAll(list.id, const {}),
+                onDelete: () => _deleteList(list),
+              ),
+              ProgressBar(
+                progress: list.progress,
+                ready: list.isReady,
+                height: 3,
+                rounded: false,
+              ),
+              if (list.isReady) const _AllPackedCard(),
+              Expanded(
+                child: (list.items.isEmpty &&
+                        list.categories.isEmpty &&
+                        !_adding)
+                    ? _EmptyList(
+                        onAddItem: () => _openAdd(null),
+                        onNewCategory: () =>
+                            showCategorySheet(context, listId: widget.listId),
+                      )
+                    : ReorderableListView.builder(
+                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
+                        buildDefaultDragHandles: false,
+                        itemCount: rows.length,
+                        onReorderStart: (_) => Haptics.tap(),
+                        proxyDecorator: (child, index, animation) =>
+                            Material(
+                          type: MaterialType.transparency,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: harbor.card,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.18),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: child,
                           ),
-                          child: child,
                         ),
+                        onReorderItem: (oldIndex, newIndex) =>
+                            _onReorder(rows, oldIndex, newIndex),
+                        itemBuilder: (context, index) =>
+                            _buildRow(context, list, rows, index),
                       ),
-                      onReorderItem: (oldIndex, newIndex) =>
-                          _onReorder(rows, oldIndex, newIndex),
-                      itemBuilder: (context, index) =>
-                          _buildRow(context, list, rows, index),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -610,11 +656,14 @@ class _ListScreenState extends State<ListScreen> {
         );
 
       case _ItemRow(:final category, :final item, :final firstInCard):
-        final checked = item.checked || _pendingCheck.contains(item.id);
+        final renaming = _renamingItem?.id == item.id;
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
-          clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
+          // Always clip, even with no corner to round: Container only inserts
+          // a ClipPath when clipBehavior != none, so flipping it would change
+          // the tree depth under the rename field (see the #22 note below).
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: harbor.card,
             borderRadius: firstInCard
@@ -623,44 +672,19 @@ class _ListScreenState extends State<ListScreen> {
           ),
           child: ReorderableDelayedDragStartListener(
             index: index,
+            // No reordering or swiping while the name is a text field: a
+            // long-press there places the cursor, a drag moves the selection.
+            enabled: !renaming,
             child: Dismissible(
               key: ValueKey('dis-${row.key}'),
-              direction: DismissDirection.horizontal,
-              background: _renameBg(harbor),
-              secondaryBackground: _swipeBg(harbor, Alignment.centerRight),
-              confirmDismiss: (direction) async {
-                if (direction == DismissDirection.startToEnd) {
-                  _renameItem(category, item);
-                  return false;
-                }
-                return true;
-              },
+              direction: renaming
+                  ? DismissDirection.none
+                  : DismissDirection.endToStart,
+              background: _swipeBg(harbor, Alignment.centerRight),
               onDismissed: (_) => _deleteItem(category, item),
-              child: InkWell(
-                onTap: () => _toggle(category, item),
-                enableFeedback: false,
-                child: Container(
-                  decoration: firstInCard
-                      ? null
-                      : BoxDecoration(
-                          border: Border(top: BorderSide(color: harbor.line))),
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                  child: Row(
-                    children: [
-                      _Checkbox(checked: checked),
-                      const SizedBox(width: 11),
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 15, color: harbor.ink),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _itemBody(harbor, category, item,
+                  checked: item.checked || _pendingCheck.contains(item.id),
+                  divider: !firstInCard),
             ),
           ),
         );
@@ -791,6 +815,7 @@ class _ListScreenState extends State<ListScreen> {
         );
 
       case _PackedItemRow(:final category, :final item, :final isFirst, :final isLast):
+        final renaming = _renamingItem?.id == item.id;
         return Container(
           key: ValueKey(row.key),
           margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -804,95 +829,93 @@ class _ListScreenState extends State<ListScreen> {
           clipBehavior: Clip.antiAlias,
           child: Dismissible(
             key: ValueKey('dis-${row.key}'),
-            direction: DismissDirection.horizontal,
-            background: _renameBg(harbor),
-            secondaryBackground: _swipeBg(harbor, Alignment.centerRight),
-            confirmDismiss: (direction) async {
-              if (direction == DismissDirection.startToEnd) {
-                _renameItem(category, item);
-                return false;
-              }
-              return true;
-            },
+            direction:
+                renaming ? DismissDirection.none : DismissDirection.endToStart,
+            background: _swipeBg(harbor, Alignment.centerRight),
             onDismissed: (_) => _deleteItem(category, item),
-            child: InkWell(
-              onTap: () => _toggle(category, item),
-              enableFeedback: false,
-              child: Container(
-                decoration: isFirst
-                    ? null
-                    : BoxDecoration(
-                        border: Border(top: BorderSide(color: harbor.line))),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                child: Row(
-                  children: [
-                    _Checkbox(checked: true),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: harbor.mut,
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: harbor.mut,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: _itemBody(harbor, category, item,
+                checked: true, divider: !isFirst),
           ),
         );
     }
   }
 
-  Widget _renameBg(Harbor harbor) {
+  /// The inside of an item row, shared by unpacked and packed rows. Two tap
+  /// targets: the checkbox packs or unpacks, the name renames in place.
+  Widget _itemBody(Harbor harbor, PackCategory? category, Item item,
+      {required bool checked, required bool divider}) {
+    final renaming = _renamingItem?.id == item.id;
+    final packed = item.checked;
     return Container(
-      color: harbor.accent,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: const Text(
-        'Rename',
-        style: TextStyle(
-            color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-
-  Future<void> _renameItem(PackCategory? category, Item item) async {
-    final harbor = context.harbor;
-    final controller = TextEditingController(text: item.name);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename item'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
-          decoration: const InputDecoration(isDense: true),
+      // Always pass a decoration, even with no divider to draw: this row hosts
+      // the rename field, and a null decoration changes the tree depth and
+      // drops the keyboard — the same trap as the add row (#22).
+      decoration: BoxDecoration(
+        border: Border(
+          top: divider ? BorderSide(color: harbor.line) : BorderSide.none,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+      ),
+      child: Row(
+        children: [
+          // The checkbox's hit area runs the full row height and out to the
+          // card edge — 52×48, comfortably above the 48dp minimum.
+          InkWell(
+            key: ValueKey('check-${item.id}'),
+            onTap: () => _toggle(category, item),
+            enableFeedback: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(15, 11, 11, 11),
+              child: _Checkbox(checked: checked),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: Text('Save', style: TextStyle(color: harbor.accent)),
+          Expanded(
+            child: InkWell(
+              onTap: renaming ? null : () => _startRename(category, item),
+              enableFeedback: false,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(right: 15),
+                child: renaming
+                    ? TextField(
+                        controller: _renameController,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.sentences,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _commitRename(),
+                        onTapOutside: (_) => _commitRename(),
+                        // bodyMedium is what the Text inherits; a TextField
+                        // builds on bodyLarge instead, whose taller line and
+                        // wider tracking make the name jump as the field opens.
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(fontSize: 15, color: harbor.ink),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                        ),
+                      )
+                    : Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: packed
+                            ? TextStyle(
+                                fontSize: 15,
+                                color: harbor.mut,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: harbor.mut,
+                              )
+                            : TextStyle(fontSize: 15, color: harbor.ink),
+                      ),
+              ),
+            ),
           ),
         ],
       ),
     );
-    if (name != null && name.isNotEmpty && name != item.name) {
-      _store.renameItem(widget.listId, category?.id, item.id, name);
-    }
   }
 
   Widget _swipeBg(Harbor harbor, Alignment alignment) {

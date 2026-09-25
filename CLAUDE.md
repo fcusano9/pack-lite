@@ -250,10 +250,18 @@ that's only partly done — annotate it instead.
   caused #22: the loose add row's `roundTop` is `looseUnchecked.isEmpty`, which flips
   exactly once — as the first item is added — so "the keyboard closes when you add an item
   to an empty list". Fix is to always pass a decoration and use `BorderSide.none` for the
-  no-divider case. Both add rows (`list_screen.dart`, `category_editor.dart`) do this now.
-  The item rows still use the `? null :` form; harmless today since they hold no focus,
-  but don't put a `TextField` under one. Guarded by `add_item_keyboard_test.dart`, which
-  asserts `tester.testTextInput.isVisible` — the reliable way to test keyboard state.
+  no-divider case. Both add rows (`list_screen.dart`, `category_editor.dart`) do this now,
+  and so do the **item rows**, since tapping a name turns it into a rename `TextField` in
+  place. `Container.clipBehavior` is the same trap (it inserts a `ClipPath` only when not
+  `Clip.none`), so item rows always clip. Guarded by `add_item_keyboard_test.dart` and
+  `item_rename_test.dart`, which assert `tester.testTextInput.isVisible` — the reliable
+  way to test keyboard state.
+- **A `TextField` doesn't render like a `Text` with the same `TextStyle`.** `Text` inherits
+  `DefaultTextStyle` (the theme's `bodyMedium`: 1.43 line height, 0.25 tracking), but
+  `TextField` merges your style onto `bodyLarge` (1.5, 0.5). So swapping one for the other
+  makes the row 2px taller and the word visibly shift. The inline rename fields build their
+  style from `textTheme.bodyMedium` for that reason; `item_rename_test.dart` asserts the
+  row height doesn't change.
 - **`Share.shareXFiles` without `sharePositionOrigin` silently does nothing on iOS.**
   It presents no sheet and, critically, **does not throw** — so a `try/catch` around it
   never fires and Export looks like a dead button (#37). The origin is documented as an
