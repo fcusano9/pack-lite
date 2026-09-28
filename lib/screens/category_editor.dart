@@ -24,6 +24,9 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
   bool _adding = false;
   final TextEditingController _addController = TextEditingController();
   final FocusNode _addFocus = FocusNode();
+  // The item whose name is currently a text field, if any.
+  Item? _renamingItem;
+  final TextEditingController _renameController = TextEditingController();
 
   AppStore get _store => context.read<AppStore>();
 
@@ -31,6 +34,7 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
   void dispose() {
     _addController.dispose();
     _addFocus.dispose();
+    _renameController.dispose();
     super.dispose();
   }
 
@@ -50,38 +54,32 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
   }
 
   void _openAdd() {
+    _commitRename();
     _commitAdd(keepOpen: false);
     setState(() => _adding = true);
     _addController.clear();
   }
 
-  Future<void> _renameItem(Item item) async {
-    final harbor = context.harbor;
-    final controller = TextEditingController(text: item.name);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename item'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
-          decoration: const InputDecoration(isDense: true),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-              child: Text('Save', style: TextStyle(color: harbor.accent))),
-        ],
-      ),
+  /// Turns [item]'s name into a text field in place, as on the list screen.
+  void _startRename(Item item) {
+    _commitRename();
+    _commitAdd(keepOpen: false);
+    _renameController.value = TextEditingValue(
+      text: item.name,
+      selection: TextSelection.collapsed(offset: item.name.length),
     );
-    if (name != null && name.isNotEmpty && name != item.name) {
+    setState(() => _renamingItem = item);
+  }
+
+  /// Saves the open rename, if any. An emptied name keeps the old one.
+  void _commitRename() {
+    final item = _renamingItem;
+    if (item == null) return;
+    final name = _renameController.text.trim();
+    if (name.isNotEmpty && name != item.name) {
       _store.savedCategoryRenameItem(widget.categoryId, item.id, name);
     }
+    setState(() => _renamingItem = null);
   }
 
   void _deleteItem(Item item) {
@@ -123,72 +121,78 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
     final category = store.savedCategoryById(widget.categoryId);
     if (category == null) return const Scaffold(body: SizedBox.shrink());
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 6, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.arrow_back_ios_new_rounded,
-                        size: 18, color: harbor.accent),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => showCategorySheet(context,
-                          saved: true, edit: category),
-                      child: Row(
-                        children: [
-                          if (category.icon != null) ...[
-                            Text(category.icon!,
-                                style: const TextStyle(fontSize: 17)),
-                            const SizedBox(width: 6),
+    // Leaving mid-rename saves the edit rather than dropping it.
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _commitRename();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 6, 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          size: 18, color: harbor.accent),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => showCategorySheet(context,
+                            saved: true, edit: category),
+                        child: Row(
+                          children: [
+                            if (category.icon != null) ...[
+                              Text(category.icon!,
+                                  style: const TextStyle(fontSize: 17)),
+                              const SizedBox(width: 6),
+                            ],
+                            Flexible(
+                              child: Text(category.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: harbor.ink)),
+                            ),
                           ],
-                          Flexible(
-                            child: Text(category.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: harbor.ink)),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: _adding ? null : _openAdd,
-                    icon:
-                        Icon(Icons.add_rounded, size: 24, color: harbor.accent),
-                  ),
-                ],
-              ),
-            ),
-            Container(height: 1, color: harbor.line),
-            Expanded(
-              child: (category.items.isEmpty && !_adding)
-                  ? _empty(harbor)
-                  : ReorderableListView.builder(
-                      padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
-                      buildDefaultDragHandles: false,
-                      // Items, plus the trailing add row.
-                      itemCount: category.items.length + 1,
-                      onReorderStart: (_) => Haptics.tap(),
-                      onReorderItem: (oldIndex, newIndex) =>
-                          _onReorder(category, oldIndex, newIndex),
-                      itemBuilder: (context, index) =>
-                          index == category.items.length
-                              ? _addRow(harbor,
-                                  roundTop: category.items.isEmpty)
-                              : _itemRow(harbor, category.items[index], index),
+                    IconButton(
+                      onPressed: _adding ? null : _openAdd,
+                      icon:
+                          Icon(Icons.add_rounded, size: 24, color: harbor.accent),
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+              Container(height: 1, color: harbor.line),
+              Expanded(
+                child: (category.items.isEmpty && !_adding)
+                    ? _empty(harbor)
+                    : ReorderableListView.builder(
+                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 40),
+                        buildDefaultDragHandles: false,
+                        // Items, plus the trailing add row.
+                        itemCount: category.items.length + 1,
+                        onReorderStart: (_) => Haptics.tap(),
+                        onReorderItem: (oldIndex, newIndex) =>
+                            _onReorder(category, oldIndex, newIndex),
+                        itemBuilder: (context, index) =>
+                            index == category.items.length
+                                ? _addRow(harbor,
+                                    roundTop: category.items.isEmpty)
+                                : _itemRow(harbor, category.items[index], index),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -196,10 +200,14 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
 
   Widget _itemRow(Harbor harbor, Item item, int index) {
     final firstInCard = index == 0;
+    final renaming = _renamingItem?.id == item.id;
     return Container(
       key: ValueKey('item-${item.id}'),
       margin: const EdgeInsets.symmetric(horizontal: 12),
-      clipBehavior: firstInCard ? Clip.antiAlias : Clip.none,
+      // Always clip and always decorate (below): flipping either between
+      // null/none and a value changes the tree depth under the rename field
+      // and drops the keyboard (#22).
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: harbor.card,
         borderRadius: firstInCard
@@ -208,19 +216,13 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
       ),
       child: ReorderableDelayedDragStartListener(
         index: index,
+        // No reordering or swiping while the name is a text field.
+        enabled: !renaming,
         child: Dismissible(
           key: ValueKey('dis-item-${item.id}'),
+          direction:
+              renaming ? DismissDirection.none : DismissDirection.endToStart,
           background: Container(
-            color: harbor.accent,
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: const Text('Rename',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700)),
-          ),
-          secondaryBackground: Container(
             color: harbor.danger,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -230,36 +232,56 @@ class _CategoryEditorScreenState extends State<CategoryEditorScreen> {
                     fontSize: 13,
                     fontWeight: FontWeight.w700)),
           ),
-          confirmDismiss: (direction) async {
-            if (direction == DismissDirection.startToEnd) {
-              _renameItem(item);
-              return false;
-            }
-            return true;
-          },
           onDismissed: (_) => _deleteItem(item),
-          child: Container(
-            decoration: firstInCard
-                ? null
-                : BoxDecoration(
-                    border: Border(top: BorderSide(color: harbor.line))),
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 5,
-                  height: 5,
-                  margin: const EdgeInsets.only(left: 8, right: 16),
-                  decoration:
-                      BoxDecoration(color: harbor.mut, shape: BoxShape.circle),
+          child: InkWell(
+            onTap: renaming ? null : () => _startRename(item),
+            enableFeedback: false,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: firstInCard
+                      ? BorderSide.none
+                      : BorderSide(color: harbor.line),
                 ),
-                Expanded(
-                  child: Text(item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 15, color: harbor.ink)),
-                ),
-              ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(left: 8, right: 16),
+                    decoration: BoxDecoration(
+                        color: harbor.mut, shape: BoxShape.circle),
+                  ),
+                  Expanded(
+                    child: renaming
+                        ? TextField(
+                            controller: _renameController,
+                            autofocus: true,
+                            textCapitalization: TextCapitalization.sentences,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _commitRename(),
+                            onTapOutside: (_) => _commitRename(),
+                            // Match the Text's inherited bodyMedium, or the
+                            // row grows and the name shifts (list_screen.dart).
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium!
+                                .copyWith(fontSize: 15, color: harbor.ink),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                            ),
+                          )
+                        : Text(item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 15, color: harbor.ink)),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

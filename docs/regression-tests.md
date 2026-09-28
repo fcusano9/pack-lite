@@ -13,7 +13,7 @@
 - [ ] **SMK-1** App launches to the Home screen with the four seeded lists visible.
 - [ ] **SMK-2** Tapping a list opens it and shows its items.
 - [ ] **SMK-3** Checking an item gives a haptic + sound, then the row animates down into **PACKED**.
-- [ ] **SMK-4** Unchecking an item (tap it in PACKED) returns it to its section.
+- [ ] **SMK-4** Unchecking an item (tap its checkbox in PACKED) returns it to its section.
 - [ ] **SMK-5** The **+** (FAB) on Home creates a new list; it appears at the **top**.
 - [ ] **SMK-6** Adding an item inline (tap **Add item**, type, Enter) works.
 - [ ] **SMK-7** Swipe a Home card **left** → Delete (with confirm); **right** → Duplicate.
@@ -114,12 +114,14 @@
 - [ ] **ITEM-4** Tapping an item's checkbox: plays a haptic tick + pop sound, the check
   lands, then after a short beat the row **animates down** into the PACKED section.
 - [ ] **ITEM-5** A packed item's text is **greyed and struck through**.
-- [ ] **ITEM-6** Tapping a packed item unchecks it and it returns to **its original
-  section** (not the top).
-- [ ] **ITEM-7** Swipe an item **right→** ("Rename") opens a rename dialog; saving
-  updates the name. (Item stays put — not dismissed.)
+- [ ] **ITEM-6** Tapping a packed item's **checkbox** unchecks it and it returns to **its
+  original section** (not the top).
+- [ ] **ITEM-7** Tapping an item's **name** (packed or not) turns it into a text field
+  **in place**, keyboard up, cursor at the end — it must **not** check the item off, and
+  the row must not change height. **Enter** or tapping elsewhere saves; clearing the name
+  keeps the old one; **back** mid-edit saves too. *(Guarded by `item_rename_test.dart`.)*
 - [ ] **ITEM-8** Swipe an item **←left** ("Delete") deletes it immediately with **no
-  confirmation**, showing an **Undo** snackbar.
+  confirmation**, showing an **Undo** snackbar. Swiping **right→** does nothing.
 - [ ] **ITEM-9** Tapping **Undo** restores the item at its original position; the
   snackbar auto-dismisses after ~4s if untouched.
 - [ ] **ITEM-10** Deleting a second item quickly replaces the first snackbar cleanly
@@ -204,8 +206,9 @@ any list, and there is no whole-list template (Duplicate covers that).
   and then the editor; tapping a card opens it to edit. Tapping the editor's title row
   reopens the sheet to rename / change the icon.
 - [ ] **SAVED-8** The editor is a **flat item list** — no category headers, no collapse, no
-  checkboxes. Add (Enter keeps the row open), swipe to rename / delete with **Undo**, and
-  long-press to reorder. *(Add-row keyboard guarded by `add_item_keyboard_test.dart`;
+  checkboxes. Add (Enter keeps the row open), tap an item to rename it in place, swipe
+  left to delete with **Undo**, and long-press to reorder. *(Add-row keyboard guarded by
+  `add_item_keyboard_test.dart`; rename by `item_rename_test.dart`;
   reorder by `saved_categories_test.dart` — `onReorderItem` already accounts for the
   removed item, so shifting `newIndex` again lands items one slot short.)*
 - [ ] **SAVED-9** A saved category with **no icon** shows a neutral folder glyph in the
